@@ -1,0 +1,65 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockInvokeSpecificModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0",
+        "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0"
+      ]
+    },
+    {
+      "Sid": "S3ReposAndReportsBuckets",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::archaeologist-repos-*/*",
+        "arn:aws:s3:::archaeologist-reports-*/*"
+      ]
+    },
+    {
+      "Sid": "S3ListAllowedBuckets",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::archaeologist-repos-*",
+        "arn:aws:s3:::archaeologist-reports-*"
+      ]
+    },
+    {
+      "Sid": "LambdaInvokeArchaeologistFunctions",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:archaeologist-*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogsArchaeologistGroups",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:/archaeologist/*",
+        "arn:aws:logs:*:*:log-group:/archaeologist/*:log-stream:*"
+      ]
+    }
+  ]
+}
