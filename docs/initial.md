@@ -44,6 +44,17 @@ Construir un agente especializado capaz de comprender automáticamente cualquier
 
 El proyecto será desarrollado siguiendo una estrategia incremental.
 
+## Lenguajes soportados en MVP
+
+El MVP soportará análisis de proyectos escritos en:
+
+- **Java** — análisis profundo via Tree-sitter + JavaParser. Cubre Spring Boot, el framework enterprise más común en proyectos legados.
+- **TypeScript / JavaScript** — análisis via Tree-sitter. Un solo parser cubre React, Next.js, Angular, Vue y Express.
+
+Esta combinación representa el escenario más frecuente de modernización: backend Java legacy + frontend JavaScript/TypeScript.
+
+Soporte para lenguajes adicionales (PHP, Python, Go, C#) se agregará post-MVP aprovechando la arquitectura extensible de Tree-sitter.
+
 ---
 
 # 🟢 MVP (Obligatorio)
@@ -57,14 +68,15 @@ El sistema permitirá:
 - Detectar el lenguaje principal.
 - Detectar el framework utilizado.
 
-Ejemplos:
+Frameworks detectables en MVP:
 
-- Spring Boot
-- Laravel
-- React
-- Angular
-- Vue
-- Next.js
+- **Java**: Spring Boot, Quarkus, Jakarta EE
+- **TypeScript/JavaScript**: React, Next.js, Angular, Vue, Express, NestJS
+
+Limitaciones MVP:
+
+- Repositorios de hasta 50,000 archivos / 500 MB.
+- Solo repositorios públicos.
 
 ---
 
@@ -72,35 +84,38 @@ Ejemplos:
 
 El sistema deberá:
 
-- Recorrer todos los archivos.
-- Construir el árbol del proyecto.
-- Identificar módulos.
-- Detectar dependencias.
+- Recorrer todos los archivos del repositorio.
+- Construir el árbol del proyecto (estructura de directorios + metadata).
+- Identificar módulos y sus responsabilidades.
+- Detectar dependencias internas (entre módulos) y externas (librerías).
 
-No deberá depender únicamente de prompts.
+El modelo se representará como un grafo dirigido almacenado en PostgreSQL con la siguiente estructura:
 
-Se utilizará análisis estático mediante AST.
+- **Nodos**: archivos, clases, funciones, módulos, paquetes.
+- **Aristas**: dependencias (import, herencia, uso, composición).
+- **Metadata por nodo**: LOC, complejidad ciclomática, última modificación.
+
+No deberá depender únicamente de prompts. Se utilizará análisis estático mediante AST (Tree-sitter para multi-lenguaje, JavaParser para análisis semántico profundo de Java).
 
 ---
 
 ## Grafo de Dependencias
 
-Generar una representación visual del sistema.
+Generar una representación visual interactiva del sistema usando React Flow.
 
 Debe mostrar:
 
-- módulos
-- paquetes
-- relaciones
-- dependencias principales
-
-La visualización será interactiva.
+- Módulos y paquetes como nodos agrupados.
+- Relaciones de dependencia como aristas dirigidas.
+- Dependencias externas destacadas.
+- Filtrado por módulo, tipo de relación y nivel de profundidad.
+- Zoom, pan y click en nodo para navegar al detalle.
 
 ---
 
 ## Chat Inteligente
 
-Implementar un chat basado en RAG.
+Implementar un chat basado en RAG (Retrieval-Augmented Generation).
 
 El usuario podrá preguntar por ejemplo:
 
@@ -109,7 +124,15 @@ El usuario podrá preguntar por ejemplo:
 - ¿Qué controlador utiliza este servicio?
 - ¿Qué módulo depende de este componente?
 
-Las respuestas deberán generarse utilizando el contexto indexado del proyecto.
+### Arquitectura RAG
+
+- **Vector Store**: pgvector (extensión de PostgreSQL en Amazon RDS).
+- **Embeddings**: Amazon Bedrock (Titan Embeddings V2).
+- **Chunking strategy**: por función/método (AST-aware). Cada chunk incluye contexto del archivo y módulo al que pertenece.
+- **Indexación**: código fuente + comentarios + nombres de archivos + estructura de directorios.
+- **Retrieval**: búsqueda semántica con re-ranking por relevancia arquitectónica.
+
+Las respuestas se generan con Claude Sonnet (Amazon Bedrock) usando el contexto recuperado.
 
 ---
 
@@ -117,20 +140,46 @@ Las respuestas deberán generarse utilizando el contexto indexado del proyecto.
 
 Generar automáticamente:
 
-- lenguaje
-- framework
-- estructura
-- módulos
-- dependencias
-- componentes principales
+- Lenguaje y versión detectada.
+- Framework y versión.
+- Estructura de módulos.
+- Dependencias principales (internas y externas).
+- Componentes principales con sus responsabilidades.
+- Métricas: LOC, número de módulos, profundidad de dependencias.
 
 ---
 
 ## Exportación de Spec para Kiro
 
-Generar automáticamente un Spec que describa un plan de modernización del proyecto.
+Generar automáticamente un Spec compatible con Kiro que describa un plan de modernización del proyecto.
 
-Este Spec deberá poder utilizarse directamente dentro de Kiro.
+### Formato de Spec generado
+
+El Spec seguirá el formato nativo de Kiro:
+
+```markdown
+---
+name: "Modernización de [nombre-proyecto]"
+version: 1.0
+---
+
+# Requisitos
+- REQ-1: [Requisito derivado del análisis]
+- REQ-2: ...
+
+# Diseño
+## Arquitectura actual
+[Descripción generada del estado actual]
+
+## Arquitectura propuesta
+[Recomendaciones de modernización]
+
+# Tasks
+- [ ] TASK-1: [Tarea concreta derivada del análisis]
+- [ ] TASK-2: ...
+```
+
+Este archivo se genera en la ruta `docs/specs/` y puede importarse directamente en un workspace de Kiro.
 
 ---
 
@@ -144,57 +193,46 @@ Si el tiempo del hackathon lo permite se implementarán las siguientes funcional
 
 Detectar:
 
-- archivos no utilizados
-- clases no utilizadas
-- métodos sin referencias
-- componentes obsoletos
+- Archivos no importados por ningún otro archivo.
+- Clases no instanciadas ni extendidas.
+- Métodos sin referencias externas.
+- Componentes exportados pero nunca importados.
 
 ---
 
 ## Reporte de Seguridad
 
-Detectar:
+Detectar mediante Semgrep:
 
-- secretos expuestos
-- dependencias vulnerables
-- problemas OWASP
-- malas prácticas
+- Secretos expuestos (API keys, passwords en código).
+- Dependencias con CVEs conocidos.
+- Problemas OWASP Top 10.
+- Malas prácticas de seguridad.
 
 ---
 
 ## Roadmap de Modernización
 
-Generar automáticamente un plan dividido por prioridades.
+Generar automáticamente un plan priorizado:
 
-Ejemplo:
-
-Sprint 1
-
-Eliminar código muerto
-
-Sprint 2
-
-Actualizar dependencias
-
-Sprint 3
-
-Separar autenticación
-
-Sprint 4
-
-Refactorizar arquitectura
+| Sprint | Acción | Justificación |
+|--------|--------|---------------|
+| 1 | Eliminar código muerto | Reducir superficie de análisis |
+| 2 | Actualizar dependencias vulnerables | Seguridad |
+| 3 | Separar módulos acoplados | Mantenibilidad |
+| 4 | Refactorizar arquitectura | Escalabilidad |
 
 ---
 
 ## Exportación de Tasks
 
-Generar automáticamente Tasks compatibles con Kiro.
+Generar automáticamente Tasks compatibles con Kiro (lista de tareas en formato markdown con checkboxes, vinculadas a un Spec).
 
 ---
 
 ## Exportación de Hooks
 
-Generar automáticamente Hooks compatibles con Kiro.
+Generar automáticamente Hooks compatibles con Kiro (archivos JSON en `.kiro/hooks/` con triggers PostFileSave para linting del código modernizado).
 
 ---
 
@@ -210,10 +248,10 @@ Permitir comparar dos commits o ramas.
 
 Mostrar:
 
-- cambios arquitectónicos
-- nuevas dependencias
-- incremento de complejidad
-- deuda técnica agregada
+- Cambios arquitectónicos (módulos agregados/eliminados).
+- Nuevas dependencias externas.
+- Incremento de complejidad ciclomática.
+- Deuda técnica agregada.
 
 ---
 
@@ -221,20 +259,20 @@ Mostrar:
 
 Analizar el historial Git para generar:
 
-- evolución del proyecto
-- crecimiento de módulos
-- deuda técnica
-- frecuencia de cambios
+- Evolución del proyecto (crecimiento de LOC por módulo).
+- Crecimiento de dependencias.
+- Zonas de alta rotación (hotspots).
+- Frecuencia de cambios por módulo.
 
 ---
 
 ## Diagramas C4
 
-Generar automáticamente:
+Generar automáticamente usando Mermaid:
 
-- Context Diagram
-- Container Diagram
-- Component Diagram
+- Context Diagram (sistema + actores externos).
+- Container Diagram (aplicaciones + stores + comunicación).
+- Component Diagram (módulos internos por contenedor).
 
 ---
 
@@ -244,35 +282,47 @@ Botón que genere automáticamente toda la estructura necesaria para comenzar un
 
 Debe generar:
 
-- Specs
-- Tasks
-- Hooks
+- Specs (plan de modernización completo).
+- Tasks (tareas ejecutables vinculadas al spec).
+- Hooks (automatizaciones post-modernización).
 
 ---
 
 # 4. Arquitectura General
 
-El sistema estará dividido en tres aplicaciones principales.
+El sistema estará dividido en tres servicios principales, comunicados via REST.
+
+```
+┌─────────────┐     REST      ┌─────────────┐     REST      ┌─────────────┐
+│  Frontend   │ ◄──────────► │   Backend   │ ◄──────────► │  Analyzer   │
+│  (Next.js)  │              │(Spring Boot)│              │  (FastAPI)  │
+└─────────────┘              └──────┬──────┘              └──────┬──────┘
+                                    │                            │
+                              ┌─────┴─────┐              ┌──────┴──────┐
+                              │ PostgreSQL │              │   Bedrock   │
+                              │ + pgvector │              │   (Claude)  │
+                              └───────────┘              └─────────────┘
+```
 
 ## Frontend
 
 Aplicación web desarrollada con:
 
-- Next.js
-- React
+- Next.js 14+ (App Router)
+- React 18+
 - TailwindCSS
 - TypeScript
-- React Flow
-- Mermaid
-- Monaco Editor
+- React Flow (grafo interactivo de dependencias)
+- Mermaid (diagramas C4 en reportes)
+- Monaco Editor (visualización de código)
 
 Responsabilidades:
 
-- Dashboard
-- Visualización
-- Chat
-- Diagramas
-- Reportes
+- Dashboard principal.
+- Visualización interactiva del grafo.
+- Chat con RAG.
+- Diagramas estáticos en reportes.
+- Exportación de artefactos Kiro.
 
 ---
 
@@ -281,37 +331,54 @@ Responsabilidades:
 Desarrollado utilizando:
 
 - Java 21
-- Spring Boot
-- Spring AI
-- Spring Data JPA
-- Spring Security
+- Spring Boot 3.x
+- Spring AI (orquestación de llamadas a Bedrock desde endpoints de chat)
+- Spring Data JPA + PostgreSQL
+- Spring Security (autenticación JWT stateless)
 
 Responsabilidades:
 
-- API REST
-- Orquestación
-- Usuarios
-- Persistencia
-- Integración AWS
-- Comunicación con Python
+- API REST (punto de entrada único para el frontend).
+- Orquestación del flujo de análisis.
+- Gestión de usuarios y proyectos.
+- Persistencia del modelo del proyecto.
+- Delegación de tareas de análisis al Analyzer.
+- Integración con servicios AWS (S3, Lambda).
 
 ---
 
-## Motor de Análisis
+## Analyzer (Motor de Análisis)
 
 Desarrollado con:
 
-- Python
+- Python 3.11+
 - FastAPI
+- Tree-sitter (parsing multi-lenguaje)
+- JavaParser (análisis semántico profundo de Java)
+- NetworkX (construcción y análisis del grafo en memoria)
+- Semgrep (análisis de seguridad, solo features deseables)
 
 Responsabilidades:
 
-- Parser
-- AST
-- RAG
-- Construcción del Grafo
-- Embeddings
-- Agentes IA
+- Clonado del repositorio.
+- Parsing AST multi-lenguaje.
+- Construcción del grafo de dependencias.
+- Generación de embeddings (via Bedrock Titan).
+- Indexación en pgvector.
+- Ejecución de agentes IA especializados.
+- Respuestas RAG.
+
+### Comunicación Backend ↔ Analyzer
+
+Protocolo: **REST síncrono + webhooks para tareas largas**.
+
+| Operación | Método | Patrón |
+|-----------|--------|--------|
+| Iniciar análisis | `POST /analyze` | Async — Backend envía URL, Analyzer responde `202 Accepted` con `job_id` |
+| Consultar estado | `GET /jobs/{job_id}` | Polling desde Backend cada 5s |
+| Notificar completado | Webhook `POST /api/webhooks/analysis-complete` | Analyzer notifica al Backend al terminar |
+| Chat / pregunta RAG | `POST /query` | Síncrono — respuesta en streaming (SSE) |
+| Obtener grafo | `GET /graph/{project_id}` | Síncrono — retorna JSON del grafo |
 
 ---
 
@@ -319,45 +386,55 @@ Responsabilidades:
 
 ## Frontend
 
-- Next.js
-- React
-- TailwindCSS
-- shadcn/ui
-- React Flow
-- Mermaid
-- Monaco Editor
+| Tecnología | Versión | Propósito |
+|-----------|---------|-----------|
+| Next.js | 14+ | Framework React con SSR/SSG |
+| React | 18+ | UI library |
+| TailwindCSS | 3.x | Utilidades CSS |
+| shadcn/ui | latest | Componentes UI |
+| React Flow | 11+ | Grafo interactivo de dependencias |
+| Mermaid | 10+ | Diagramas C4 estáticos en reportes |
+| Monaco Editor | latest | Visualización de código en browser |
+| TypeScript | 5.x | Tipado estático |
 
 ---
 
 ## Backend
 
-- Java 21
-- Spring Boot
-- Spring AI
-- PostgreSQL
-- JPA
-- Docker
+| Tecnología | Versión | Propósito |
+|-----------|---------|-----------|
+| Java | 21 | Runtime |
+| Spring Boot | 3.x | Framework web |
+| Spring AI | 1.x | Integración con Bedrock para chat |
+| Spring Data JPA | 3.x | ORM / Persistencia |
+| Spring Security | 6.x | Auth JWT stateless |
+| PostgreSQL | 15+ | Base de datos principal |
+| pgvector | 0.5+ | Extensión para vector search (RAG) |
+| Docker | latest | Containerización |
 
 ---
 
-## Motor IA
+## Analyzer (Motor IA)
 
-- Python
-- FastAPI
-- Tree-sitter
-- JavaParser
-- NetworkX
-- Semgrep
+| Tecnología | Versión | Propósito |
+|-----------|---------|-----------|
+| Python | 3.11+ | Runtime |
+| FastAPI | 0.100+ | API REST del analyzer |
+| Tree-sitter | 0.20+ | Parsing AST multi-lenguaje (Java, TS, JS) |
+| JavaParser | 3.25+ | Análisis semántico profundo de Java |
+| NetworkX | 3.x | Grafo de dependencias en memoria |
+| Semgrep | latest | Análisis de seguridad (features deseables) |
+| boto3 | latest | SDK AWS para Bedrock y S3 |
 
 ---
 
-## IA
+## IA y Embeddings
 
-Amazon Bedrock
-
-Modelo sugerido:
-
-Claude Sonnet
+| Servicio | Modelo | Propósito |
+|----------|--------|-----------|
+| Amazon Bedrock | Claude Sonnet | Generación de texto, razonamiento, documentación |
+| Amazon Bedrock | Titan Embeddings V2 | Generación de embeddings para RAG |
+| pgvector | — | Almacenamiento y búsqueda de vectores |
 
 ---
 
@@ -371,10 +448,10 @@ Motor principal de IA.
 
 Responsabilidades:
 
-- generación de documentación
-- chat
-- razonamiento
-- roadmap
+- Generación de documentación.
+- Chat y respuestas RAG (Claude Sonnet).
+- Embeddings para indexación (Titan Embeddings V2).
+- Razonamiento de agentes especializados.
 
 ---
 
@@ -382,171 +459,246 @@ Responsabilidades:
 
 Almacenar:
 
-- reportes
-- diagramas
-- documentación
+- Repositorios clonados (temporales).
+- Reportes generados (PDF/Markdown).
+- Diagramas exportados.
 
 ---
 
 ## Amazon RDS
 
-Base de datos PostgreSQL.
+Base de datos PostgreSQL 15+ con extensión pgvector habilitada.
+
+Almacena:
+
+- Modelo del proyecto (nodos, aristas, metadata).
+- Embeddings para RAG.
+- Usuarios y sesiones.
+- Historial de análisis.
 
 ---
 
 ## AWS Lambda
 
-Procesamiento asíncrono.
+Procesamiento asíncrono disparado por eventos.
+
+- **Trigger**: SQS (cola de análisis) o invocación directa desde Backend.
+- **Uso**: tareas de post-procesamiento (generación de reportes PDF, notificaciones).
 
 ---
 
 ## AWS Amplify
 
-Publicación del Frontend.
+Publicación del Frontend (Next.js con SSR).
 
 ---
 
 ## Elastic Beanstalk
 
-Publicación del Backend.
+Publicación del Backend (Java/Spring Boot con Docker).
 
 ---
 
 # 7. Arquitectura de Agentes
 
-El sistema estará compuesto por múltiples agentes especializados.
+El sistema estará compuesto por agentes especializados orquestados desde el Analyzer. Cada agente recibe un contexto específico y produce un output estructurado.
+
+## Orquestación
+
+Los agentes se ejecutan **secuencialmente** en el orden listado. Cada agente recibe el output del anterior como contexto adicional. La orquestación se implementa como un pipeline en Python (patrón chain).
+
+```
+Repository Agent → Architecture Agent → Quality Agent → Security Agent
+                                                              ↓
+                            Kiro Agent ← Modernization Agent ← Documentation Agent
+```
+
+---
 
 ## Repository Agent
 
-Analiza el repositorio.
+**Input**: URL del repositorio GitHub.
+
+**Proceso**:
+- Clona el repositorio.
+- Detecta lenguaje principal y frameworks.
+- Construye el árbol de archivos.
+- Ejecuta parsing AST.
+- Genera el grafo de dependencias.
+- Indexa embeddings en pgvector.
+
+**Output**: `ProjectModel` (grafo completo + metadata + embeddings indexados).
 
 ---
 
 ## Architecture Agent
 
-Comprende la arquitectura.
+**Input**: `ProjectModel` del Repository Agent.
+
+**Proceso**:
+- Analiza patrones arquitectónicos (MVC, hexagonal, microservicios).
+- Identifica capas y sus responsabilidades.
+- Detecta violaciones de arquitectura (dependencias circulares, capas saltadas).
+- Clasifica módulos por dominio.
+
+**Output**: `ArchitectureReport` (patrón detectado, capas, violaciones, diagrama C4 sugerido).
 
 ---
 
 ## Quality Agent
 
-Evalúa calidad.
+**Input**: `ProjectModel` + `ArchitectureReport`.
+
+**Proceso**:
+- Calcula métricas de complejidad por módulo.
+- Detecta código muerto (imports no usados, clases huérfanas).
+- Identifica code smells (métodos largos, clases god object).
+- Evalúa cobertura de tests (si hay tests presentes).
+
+**Output**: `QualityReport` (métricas, lista de code smells, código muerto, score general).
 
 ---
 
 ## Security Agent
 
-Evalúa seguridad.
+**Input**: `ProjectModel` + dependencias externas.
+
+**Proceso**:
+- Ejecuta Semgrep con ruleset OWASP.
+- Busca secretos expuestos (regex + entropy).
+- Verifica CVEs en dependencias (advisory databases).
+- Evalúa configuraciones inseguras.
+
+**Output**: `SecurityReport` (vulnerabilidades, severidad, recomendaciones).
 
 ---
 
 ## Documentation Agent
 
-Genera documentación.
+**Input**: `ProjectModel` + `ArchitectureReport` + `QualityReport`.
+
+**Proceso**:
+- Genera README técnico del proyecto analizado.
+- Documenta cada módulo principal.
+- Genera descripción de endpoints (si es API).
+- Produce resumen ejecutivo.
+
+**Output**: `DocumentationBundle` (README.md, módulos.md, API.md, resumen).
 
 ---
 
 ## Modernization Agent
 
-Propone mejoras.
+**Input**: Todos los reports anteriores.
+
+**Proceso**:
+- Prioriza deuda técnica por impacto.
+- Propone plan de refactoring incremental.
+- Sugiere migraciones de dependencias.
+- Genera roadmap por sprints.
+
+**Output**: `ModernizationPlan` (roadmap priorizado, justificaciones, esfuerzo estimado).
 
 ---
 
 ## Kiro Agent
 
-Genera automáticamente:
+**Input**: `ModernizationPlan` + `ArchitectureReport`.
 
-- Specs
-- Tasks
-- Hooks
+**Proceso**:
+- Transforma el plan en formato Spec de Kiro.
+- Genera Tasks vinculadas al Spec.
+- Genera Hooks para automatización post-modernización.
+
+**Output**:
+- `spec.md` — Spec completo con requisitos, diseño y tasks.
+- `tasks.md` — Lista de tareas ejecutables.
+- `hooks.json` — Hooks para Kiro (PostFileSave, PostTaskExec).
 
 ---
 
 # 8. Flujo General
 
-Usuario
-
-↓
-
-Repositorio GitHub
-
-↓
-
-Repository Agent
-
-↓
-
-Parser
-
-↓
-
-AST
-
-↓
-
-Modelo del Proyecto
-
-↓
-
-Embeddings
-
-↓
-
-RAG
-
-↓
-
-Amazon Bedrock
-
-↓
-
-Agentes Especializados
-
-↓
-
-Dashboard
-
-↓
-
-Chat
-
-↓
-
-Reportes
-
-↓
-
-Exportación para Kiro
+```
+┌─────────┐
+│ Usuario │
+└────┬────┘
+     │ Ingresa URL de repositorio
+     ▼
+┌─────────────┐
+│  Frontend   │
+│  (Next.js)  │
+└────┬────────┘
+     │ POST /api/projects/analyze {repoUrl}
+     ▼
+┌─────────────┐
+│   Backend   │  Valida, crea proyecto, encola análisis
+│(Spring Boot)│
+└────┬────────┘
+     │ POST /analyze {repoUrl, projectId}
+     ▼
+┌─────────────┐
+│  Analyzer   │  Clona → Parsea → Grafo → Embeddings → Agentes
+│  (FastAPI)  │
+└────┬────────┘
+     │
+     ├──► Repository Agent ──► Architecture Agent ──► Quality Agent
+     │                                                      │
+     │    Kiro Agent ◄── Modernization Agent ◄── Documentation Agent ◄──┘
+     │         │
+     │         ▼
+     │    Genera Specs + Tasks + Hooks
+     │
+     │ Webhook: POST /api/webhooks/analysis-complete
+     ▼
+┌─────────────┐
+│   Backend   │  Persiste resultados, notifica frontend
+└────┬────────┘
+     │
+     ▼
+┌─────────────┐
+│  Frontend   │  Dashboard + Grafo + Chat + Reportes + Export Kiro
+└─────────────┘
+```
 
 ---
 
 # 9. Estructura del Proyecto
 
-Se utilizará la siguiente organización.
-
 ```
 software-archaeologist/
 
-├── .env
+├── .data/
+│   ├── .env               # Entorno activo (Docker lo usa por defecto)
+│   ├── .env.dev           # Plantilla desarrollo
+│   └── .env.prod          # Plantilla producción
+│
 ├── docker-compose.yml
 │
 ├── docker/
+│   ├── backend/Dockerfile
+│   ├── frontend/Dockerfile
+│   └── analyzer/Dockerfile
+│
+├── nginx/
+│   └── default.conf
 │
 ├── scripts/
+│   ├── start.sh
+│   ├── stop.sh
+│   └── url.sh
 │
 ├── apps/
-│   ├── backend/
-│   ├── frontend/
-│   ├── analyzer/
-│   ├── aws/
-│   └── shared/
+│   ├── backend/           # API Java/Spring Boot
+│   ├── frontend/          # Web Next.js
+│   ├── analyzer/          # Motor de análisis Python/FastAPI
+│   └── aws/               # Lambdas, IAM, config AWS
 │
 ├── docs/
+│   ├── initial.md         # Este documento
 │   ├── architecture/
 │   ├── diagrams/
-│   ├── specs/
-│   ├── tasks/
-│   └── hooks/
+│   └── specs/
 │
 └── README.md
 ```
@@ -554,26 +706,27 @@ software-archaeologist/
 Se respetarán las siguientes reglas:
 
 - Nunca mezclar infraestructura con código de aplicación.
-- Nunca crear archivos `.env` dentro de `apps/`.
-- Toda la configuración será centralizada.
-- Docker será el mecanismo principal de desarrollo local.
-- Los cambios de entorno se realizarán únicamente mediante `.env` o `--env-file`.
+- Nunca crear archivos `.env` dentro de `apps/`. Toda la configuración vive en `.data/`.
+- Los cambios de entorno se realizan copiando plantillas sobre `.data/.env` o usando `--env-file`.
+- Docker es el mecanismo principal de desarrollo local.
+- Dockerfiles viven en `docker/<servicio>/Dockerfile` con `context: .` (raíz).
+- Cada servicio en `docker-compose.yml` usa `env_file: ${COMPOSE_ENV_FILE:-.data/.env}`.
 
 ---
 
 # 10. Principios de Desarrollo
 
-El proyecto seguirá las siguientes prácticas.
+El proyecto seguirá las siguientes prácticas:
 
-- Clean Architecture
-- Arquitectura Hexagonal
-- SOLID
-- DDD cuando aplique
-- APIs REST
-- Modularidad
-- Código desacoplado
-- Alta mantenibilidad
-- Testing para componentes críticos
+- Clean Architecture en Backend (capas: domain, application, infrastructure).
+- Arquitectura Hexagonal (puertos y adaptadores) para el Analyzer.
+- SOLID en todas las capas.
+- DDD para el dominio del modelo de proyecto.
+- APIs REST con versionado (`/api/v1/`).
+- Modularidad: cada agente es un módulo independiente en el Analyzer.
+- Código desacoplado via interfaces/protocolos.
+- Testing para componentes críticos (agentes, parsing, RAG).
+- Git flow: branch por feature, PR con review, nunca push a main.
 
 ---
 
@@ -582,15 +735,16 @@ El proyecto seguirá las siguientes prácticas.
 Al finalizar el proyecto se deberá contar con:
 
 - Repositorio GitHub público.
-- Aplicación desplegada.
-- Dashboard funcional.
-- Chat con RAG.
-- Reporte de arquitectura.
-- Exportación de Specs para Kiro.
+- Aplicación desplegada (Frontend en Amplify, Backend en Elastic Beanstalk).
+- Dashboard funcional con análisis de repositorio.
+- Grafo interactivo de dependencias.
+- Chat con RAG funcional.
+- Reporte de arquitectura generado automáticamente.
+- Exportación de Specs compatibles con Kiro.
 - README profesional.
-- Diagramas técnicos.
-- Docker Compose.
-- Documentación técnica.
+- Diagramas técnicos (C4, flujo de datos).
+- Docker Compose funcional para desarrollo local.
+- Documentación técnica en `/docs`.
 - Video demostrativo del proyecto.
 
 ---
@@ -599,14 +753,19 @@ Al finalizar el proyecto se deberá contar con:
 
 El proyecto será considerado exitoso si:
 
-- Analiza correctamente un repositorio de GitHub.
+- Analiza correctamente un repositorio de GitHub (Java o TypeScript/JavaScript).
 - Detecta automáticamente el lenguaje y framework.
-- Genera un grafo funcional del proyecto.
-- Responde preguntas mediante RAG.
-- Genera un reporte de arquitectura útil.
+- Genera un grafo interactivo funcional del proyecto.
+- Responde preguntas sobre el código mediante RAG.
+- Genera un reporte de arquitectura útil y preciso.
 - Exporta correctamente un Spec compatible con Kiro.
 
-Como objetivo adicional, se buscará implementar la generación de Tasks y Hooks, así como funcionalidades avanzadas como comparación de versiones, línea de tiempo de deuda técnica y generación automática de diagramas C4.
+Objetivos adicionales (deseables):
+
+- Genera Tasks y Hooks compatibles con Kiro.
+- Detecta código muerto.
+- Produce reporte de seguridad.
+- Genera roadmap de modernización priorizado.
 
 ---
 
@@ -616,10 +775,10 @@ El objetivo principal no es únicamente crear un analizador de código, sino dem
 
 La demostración deberá evidenciar el uso de:
 
-- Specs
-- Tasks
-- Hooks
-- Agentes especializados
-- Amazon Bedrock
-- Servicios AWS
+- Specs (plan de modernización generado).
+- Tasks (tareas ejecutables vinculadas).
+- Hooks (automatizaciones reactivas).
+- Agentes especializados (pipeline de análisis).
+- Amazon Bedrock (Claude Sonnet + Titan Embeddings).
+- Servicios AWS (RDS, S3, Lambda, Amplify, Elastic Beanstalk).
 - Automatización del flujo completo de análisis y generación de conocimiento.
