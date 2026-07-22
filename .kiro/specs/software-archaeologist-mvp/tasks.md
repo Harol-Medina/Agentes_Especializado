@@ -261,6 +261,32 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
 - [ ] 15. Final Checkpoint - All services integrated
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 16. AWS IAM Setup and Infrastructure
+  - [ ] 16.1 Create IAM user and minimal policy
+    - Create `apps/AWS/iam/policy-minimal.json` with the documented IAM policy (Bedrock, S3, Lambda, CloudWatch scoped)
+    - Create `apps/AWS/iam/setup.sh` script with all AWS CLI commands documented (create-user, create-policy, attach-user-policy, create-access-key)
+    - Each command includes inline comments explaining purpose and justification
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
+
+  - [ ] 16.2 Create S3 buckets with lifecycle policies
+    - Create `apps/AWS/s3/create-buckets.sh` with commands to create `archaeologist-repos-prod` and `archaeologist-reports-prod`
+    - Configure lifecycle policy on repos bucket: delete objects after 24 hours
+    - Document why each bucket exists and its retention policy
+    - _Requirements: 14.3, 14.8_
+
+  - [ ] 16.3 Create verification script
+    - Create `apps/AWS/iam/verify-permissions.sh` that runs `aws iam simulate-principal-policy` against destructive actions
+    - Verify user CANNOT: `s3:DeleteBucket`, `iam:CreateUser`, `ec2:RunInstances`, `rds:DeleteDBInstance`
+    - Verify user CAN: `bedrock:InvokeModel`, `s3:PutObject` on allowed buckets, `logs:PutLogEvents`
+    - Output clear PASS/FAIL table for each permission check
+    - _Requirements: 14.6, 14.9_
+
+  - [ ] 16.4 Document Bedrock model access verification
+    - Create `apps/AWS/bedrock/verify-models.sh` with command to check model availability
+    - Include instructions for enabling models via console if not accessible
+    - List exact model IDs required: `anthropic.claude-3-sonnet-20240229-v1:0`, `amazon.titan-embed-text-v2:0`
+    - _Requirements: 14.2_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -282,8 +308,8 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
 {
   "waves": [
     { "id": 0, "tasks": ["1.1"] },
-    { "id": 1, "tasks": ["1.2", "10.1"] },
-    { "id": 2, "tasks": ["2.1", "4.1"] },
+    { "id": 1, "tasks": ["1.2", "10.1", "16.1"] },
+    { "id": 2, "tasks": ["2.1", "4.1", "16.2", "16.3", "16.4"] },
     { "id": 3, "tasks": ["2.2", "4.2", "10.2"] },
     { "id": 4, "tasks": ["2.3", "2.4", "4.3", "4.4"] },
     { "id": 5, "tasks": ["2.5", "2.6", "4.5", "4.6", "4.7", "4.8"] },

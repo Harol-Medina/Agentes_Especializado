@@ -47,20 +47,38 @@ Este documento describe la arquitectura, componentes, interfaces, modelos de dat
 |---------|----------------|----------|----------|
 | Sync REST | Frontend → Backend | HTTP JSON | All user-initiated actions |
 | Async Initiation | Backend → Analyzer | POST /analyze → 202 | Start analysis job |
-| Polling | Backend → Analyzer | GET /jobs/{id} (5s) | Monitor job progress |
-| Webhook | Analyzer → Backend | POST /api/webhooks/* | Notify completion |
-| SSE Streaming | Backend → Frontend | text/event-stream | Chat responses, progress |
-| Sync Data | Backend → Analyzer | GET /graph/{id} | Retrieve graph data |
+| Polling (fallback) | Backend → Analyzer | GET /jobs/{id} (5s) | Monitor job progress (resilience) |
+| Webhook (primary) | Analyzer → Backend | POST /api/webhooks/* | Notify completion (HMAC-signed) |
+| SSE Streaming | Backend → Frontend | text/event-stream | Chat responses only |
+| Polling | Frontend → Backend | GET /jobs/{id} (5s) | Analysis progress updates |
+| Direct DB Read | Backend → PostgreSQL | SQL | Graph data, reports, specs |
+
+> **Nota sobre Polling + Webhook:** El webhook es el mecanismo primario de notificación. El polling es un mecanismo de resiliencia: si el webhook llega primero, el próximo ciclo de polling detecta que el job ya está completed y para. Si el webhook falla (3 retries), el polling eventualmente captura el estado final. Ambos son idempotentes.
 
 ### Service Responsibilities
 
 | Service | Responsibility |
 |---------|---------------|
 | **Frontend** | UI rendering, interactive graph (React Flow), chat interface, report display, Kiro export download |
-| **Backend** | API gateway, job orchestration, sequential queue enforcement, data persistence, webhook receiver, SSE relay |
-| **Analyzer** | Repository cloning, AST parsing, graph construction, embedding generation, agent pipeline execution, RAG queries |
+| **Backend** | API gateway, job orchestration, sequential queue enforcement, DB reads (graph/report/spec), webhook receiver, SSE relay to Frontend |
+| **Analyzer** | Repository cloning, AST parsing, graph construction, embedding generation, agent pipeline execution, RAG queries, **DB writes** (graph, embeddings, reports, specs) |
 | **PostgreSQL** | Project model storage, embedding vectors (pgvector), job state, analysis results |
-| **Nginx** | Reverse proxy, path-based routing, static asset serving |
+| **Nginx** | Reverse proxy, path-based routing, rate limiting |
+
+### Database Ownership Model
+
+| Concern | Owner | Notes |
+|---------|-------|-------|
+| DDL / Schema migrations | **Backend** (Flyway) | Todas las tablas las crea el Backend al arrancar |
+| DML Write (graph_nodes, graph_edges, code_embeddings, architecture_reports, kiro_specs) | **Analyzer** | Escribe directamente vía asyncpg |
+| DML Write (analysis_jobs, projects, agent_results) | **Ambos** | Backend crea el job; Analyzer actualiza status y resultados |
+| DML Read | **Backend** | Lee de DB para servir al Frontend (graph, report, spec) |
+
+> **Startup Dependency:** El Analyzer depende del Backend con `condition: service_healthy`. El Backend solo pasa healthy después de que Flyway complete las migrations. Esto garantiza que las tablas existen antes de que el Analyzer intente escribir.
+
+### Graph Data Path
+
+El Frontend solicita el grafo vía `GET /api/v1/projects/{id}/graph` al Backend. El Backend **lee directamente de PostgreSQL** (tablas `graph_nodes` + `graph_edges`) con filtros SQL, sin llamar al Analyzer. El Analyzer es responsable de escribir el grafo en DB durante el pipeline; el Backend solo lo consume.
 
 ---
 
@@ -325,7 +343,7 @@ CREATE TABLE code_embeddings (
 
 CREATE INDEX idx_embeddings_project ON code_embeddings(project_id);
 CREATE INDEX idx_embeddings_vector ON code_embeddings
-    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    USING hnsw (embedding vector_cosine_ops);  -- HNSW works well at any cardinality
 
 -- Architecture Reports
 CREATE TABLE architecture_reports (
@@ -564,12 +582,20 @@ data: {"files": ["src/auth/JwtFilter.java", "src/auth/AuthService.java"]}
 
 event: done
 data: {}
+
+Response 409 Conflict (analysis not complete):
+{
+  "error": "ANALYSIS_NOT_COMPLETE",
+  "message": "Chat is available after analysis completes. Current status: analyzing"
+}
 ```
+
+> **Edge case:** El Frontend deshabilita el tab de Chat hasta que `status === "completed"`. Si un request llega antes (ej: direct URL), el Backend retorna 409.
 
 #### Graph
 
 ```
-GET /api/v1/projects/{projectId}/graph?module=auth&depth=2&edgeType=import
+GET /api/v1/projects/{projectId}/graph?module=auth&depth=2&edgeType=import&limit=500&offset=0
 
 Response 200:
 {
@@ -593,9 +619,17 @@ Response 200:
       "type": "import",
       "metadata": {}
     }
-  ]
+  ],
+  "pagination": {
+    "total": 245,
+    "limit": 500,
+    "offset": 0,
+    "hasMore": false
+  }
 }
 ```
+
+> **Implementación:** El Backend lee directamente de PostgreSQL (`graph_nodes` + `graph_edges`) con filtros SQL. No llama al Analyzer para datos de grafo. Paginación con `limit` (default 500) y `offset` para manejar monorepos grandes.
 
 #### Architecture Report
 
@@ -652,6 +686,7 @@ Content-Disposition: attachment; filename="modernization-spec.md"
 ```
 POST /api/webhooks/analysis-complete
 Content-Type: application/json
+X-Webhook-Signature: sha256={hmac_hex_digest}
 
 Request (from Analyzer):
 {
@@ -671,7 +706,12 @@ Request (from Analyzer):
 
 Response 200:
 {"received": true}
+
+Response 401 Unauthorized (invalid signature):
+{"error": "INVALID_SIGNATURE"}
 ```
+
+> **Webhook Security:** El Analyzer firma el payload con HMAC-SHA256 usando `WEBHOOK_SECRET`. El Backend valida la firma antes de procesar. Esto previene que actores externos envíen webhooks falsos para marcar jobs como completados.
 
 ### Analyzer API (Port 8000)
 
@@ -746,6 +786,9 @@ data: {"content": "The payment flow"}
 event: token
 data: {"content": " starts in PaymentController"}
 
+event: heartbeat
+data: {}
+
 event: done
 data: {"totalTokens": 450}
 
@@ -753,6 +796,8 @@ data: {"totalTokens": 450}
 event: no_context
 data: {"message": "No relevant information found for this question."}
 ```
+
+> **SSE Heartbeat:** El Analyzer emite `event: heartbeat` cada 15s durante la generación para mantener la conexión viva a través de Nginx/proxies. El Frontend ignora estos eventos silenciosamente. `useSSEChat` implementa auto-reconexión si la conexión se pierde (EventSource nativo con `Last-Event-ID`).
 
 #### Graph Data
 
@@ -772,6 +817,8 @@ Response 200:
   }
 }
 ```
+
+> **Nota:** Este endpoint es **interno al Analyzer** para uso propio (ej: re-ranking en RAG). El Backend NO lo llama — lee directamente de PostgreSQL para servir al Frontend. Se mantiene por si se necesita acceso programático directo al grafo en memoria del Analyzer durante el pipeline.
 
 ---
 
@@ -818,6 +865,16 @@ class BaseAgent(ABC):
     def can_execute(self, context: PipelineContext) -> bool:
         """Check if minimum required context exists to run."""
         return context.project_model is not None
+```
+
+#### Kiro_Agent Degradation Levels
+
+| Available Context | Output |
+|---|---|
+| `modernization_plan` + `architecture_report` | Kiro Spec completo (Requirements + Design current/proposed + Tasks) |
+| Solo `architecture_report` (Modernization falló) | Kiro Spec parcial: Requirements + Design (solo current), Tasks genéricos basados en quality metrics. `is_partial = true` |
+| Solo `project_model` (Architecture + Modernization fallaron) | Kiro Spec mínimo: Solo sección Design con lista de módulos/archivos detectados. Sin Tasks concretos. `is_partial = true` |
+| Nada (Repository falló) | No se ejecuta — pipeline ya terminó antes |
 
 
 @dataclass
@@ -962,8 +1019,13 @@ class ASTChunker:
         - File path context header
         - Module/class context
 
+        Invariant: No chunk ever contains code from two different
+        functions/methods (boundary integrity is preserved).
+
         If a function exceeds MAX_CHUNK_SIZE, it is split at logical
         boundaries (blocks, statements) preserving context headers.
+        This means a file with N functions may produce >= N chunks,
+        but never fewer.
         """
         ...
 ```
@@ -1010,6 +1072,37 @@ public class JobQueueService {
 }
 ```
 
+> **Limitación MVP:** El single-slot queue usa `AtomicReference` en memoria. Solo funciona con una instancia del Backend. Para multi-instancia en producción, migrar a un PostgreSQL advisory lock (`SELECT pg_try_advisory_lock(1)`) o `SELECT FOR UPDATE SKIP LOCKED`.
+
+### Job Timeout (Stalled Job Recovery)
+
+```java
+@Component
+public class StalledJobRecovery {
+
+    private static final int MAX_ANALYSIS_MINUTES = 30;
+
+    @Scheduled(fixedRate = 60_000) // check every 1 min
+    public void recoverStalledJobs() {
+        Optional<UUID> activeJob = jobQueueService.getActiveJobId();
+        if (activeJob.isEmpty()) return;
+
+        AnalysisJob job = jobRepository.findById(activeJob.get()).orElse(null);
+        if (job == null) { jobQueueService.release(activeJob.get()); return; }
+
+        Duration elapsed = Duration.between(job.getCreatedAt(), Instant.now());
+        if (elapsed.toMinutes() > MAX_ANALYSIS_MINUTES) {
+            job.markFailed("Analysis timed out after " + MAX_ANALYSIS_MINUTES + " minutes");
+            jobRepository.save(job);
+            jobQueueService.release(job.getId());
+        }
+    }
+}
+```
+
+> **Edge case resuelto:** Si el Analyzer crashea o no envía webhook ni responde a polling, el job no queda bloqueado indefinidamente. Después de 30 minutos se marca como `failed` y el slot se libera.
+```
+
 ### URL Validation
 
 ```java
@@ -1022,10 +1115,17 @@ public class GitHubUrlValidator {
     /**
      * Validates that the URL is a valid public GitHub repository.
      *
-     * Checks:
+     * Phase 1 (Pre-clone, Backend):
      * 1. URL matches GitHub repository pattern
-     * 2. Repository exists and is publicly accessible (HEAD request)
-     * 3. Repository does not exceed size limits
+     * 2. Repository exists and is publicly accessible (GitHub API: GET /repos/{owner}/{repo})
+     * 3. Repository size does not exceed 500 MB (field "size" in KB from GitHub API)
+     *
+     * Phase 2 (Post-clone, Analyzer):
+     * 4. File count does not exceed 50,000 (validated after clone, before parsing)
+     *
+     * Note: File count cannot be reliably determined without cloning.
+     * The GitHub Trees API has a 100K entry limit and is unreliable for this check.
+     * Post-clone validation acts as early exit before the expensive parsing step.
      *
      * @throws InvalidRepositoryException with descriptive error
      */
@@ -1035,8 +1135,7 @@ public class GitHubUrlValidator {
 public record ValidationResult(
     boolean valid,
     String error,    // null if valid
-    long repoSizeBytes,
-    int fileCount
+    long repoSizeBytes  // from GitHub API "size" field * 1024
 ) {}
 ```
 
@@ -1151,7 +1250,9 @@ public enum ErrorCode {
     SYSTEM_BUSY("SYSTEM_BUSY", "System is processing another analysis"),
     JOB_NOT_FOUND("JOB_NOT_FOUND", "Analysis job not found"),
     PROJECT_NOT_FOUND("PROJECT_NOT_FOUND", "Project not found"),
+    ANALYSIS_NOT_COMPLETE("ANALYSIS_NOT_COMPLETE", "Chat/graph/report unavailable until analysis completes"),
     ANALYSIS_FAILED("ANALYSIS_FAILED", "Analysis pipeline terminated due to critical error"),
+    INVALID_SIGNATURE("INVALID_SIGNATURE", "Webhook signature validation failed"),
     INTERNAL_ERROR("INTERNAL_ERROR", "An unexpected error occurred");
 }
 ```
@@ -1193,6 +1294,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s  # Flyway migrations + Spring Boot startup
 
   analyzer:
     build:
@@ -1202,6 +1309,8 @@ services:
     expose:
       - "8000"
     depends_on:
+      backend:
+        condition: service_healthy  # Ensures Flyway migrations ran
       db:
         condition: service_healthy
     volumes:
@@ -1222,13 +1331,19 @@ services:
 
 volumes:
   pgdata:
-  analyzer_repos:
+  analyzer_repos:  # Ephemeral — safe to prune. Analyzer cleans repos older than 1h.
 ```
+
+> **Repo Cleanup:** El Analyzer ejecuta un scheduled task que elimina repos clonados con >1h de antigüedad de `/tmp/repos`. Esto previene que el volumen crezca indefinidamente en desarrollo local.
 
 ### Nginx Configuration
 
 ```nginx
 # nginx/default.conf
+
+# Rate limiting for job submissions (5 requests/min per IP)
+limit_req_zone $binary_remote_addr zone=jobs:10m rate=5r/m;
+
 upstream backend {
     server backend:8080;
 }
@@ -1240,7 +1355,15 @@ upstream frontend {
 server {
     listen 80;
 
-    # API routes → Backend
+    # Job submission — rate limited
+    location = /api/v1/jobs {
+        limit_req zone=jobs burst=2 nodelay;
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # API routes → Backend (SSE-compatible)
     location /api/ {
         proxy_pass http://backend;
         proxy_set_header Host $host;
@@ -1248,7 +1371,9 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Connection '';
         proxy_buffering off;          # Required for SSE
-        proxy_read_timeout 300s;      # Long analysis polling
+        proxy_read_timeout 600s;      # 10 min for long analysis + chat
+        proxy_send_timeout 600s;
+        chunked_transfer_encoding on;
     }
 
     # Everything else → Frontend
@@ -1281,6 +1406,7 @@ SPRING_DATASOURCE_USERNAME=archaeologist
 SPRING_DATASOURCE_PASSWORD=dev_password_change_me
 ANALYZER_BASE_URL=http://analyzer:8000
 SERVER_PORT=8080
+MAX_ANALYSIS_DURATION_MINUTES=30
 
 # Analyzer (FastAPI)
 DATABASE_URL=postgresql+asyncpg://archaeologist:dev_password_change_me@db:5432/archaeologist
@@ -1293,6 +1419,7 @@ WEBHOOK_SECRET=shared_webhook_secret
 CLONE_TEMP_DIR=/tmp/repos
 MAX_REPO_SIZE_MB=500
 MAX_FILE_COUNT=50000
+REPO_CLEANUP_MAX_AGE_HOURS=1
 
 # Frontend (Next.js)
 NEXT_PUBLIC_API_URL=/api
@@ -1564,7 +1691,7 @@ version: 1.0
 
 ### Property 7: AST-Aware Chunking Preserves Function Boundaries
 
-*For any* source file containing N distinct functions or methods, the ASTChunker SHALL produce exactly N chunks (one per function/method), and each chunk SHALL include the complete function body plus a context header identifying the file path and containing module/class.
+*For any* source file containing N distinct functions or methods, the ASTChunker SHALL produce **at least** N chunks (one or more per function/method depending on MAX_CHUNK_SIZE), each chunk SHALL include the complete function body **or a contiguous portion thereof** plus a context header identifying the file path and containing module/class. No chunk SHALL contain code from **two different** functions or methods (boundary integrity).
 
 **Validates: Requirements 5.2**
 
@@ -1602,3 +1729,251 @@ version: 1.0
 *For any* node in the Dependency_Graph that represents an external dependency, the rendered node SHALL have a visually distinct style (different color, border, or icon) that differentiates it from internal project nodes.
 
 **Validates: Requirements 4.3**
+
+
+---
+
+## AWS IAM Setup — Usuario `kiro-archaeologist`
+
+### Principio de Mínimo Privilegio
+
+El usuario IAM `kiro-archaeologist` se crea con **solo los permisos necesarios** para operar el MVP en producción. Cada permiso está justificado por un servicio y caso de uso específico.
+
+### Servicios AWS Utilizados y Justificación
+
+| Servicio | Uso en el Proyecto | Permisos Requeridos |
+|----------|-------------------|---------------------|
+| **Amazon Bedrock** | Invocación de Claude Sonnet (agentes IA) y Titan Embeddings V2 (embeddings para RAG) | `bedrock:InvokeModel`, `bedrock:InvokeModelWithResponseStream` |
+| **Amazon S3** | Almacenamiento temporal de repos clonados (lifecycle 24h) y reportes/specs generados | `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:ListBucket` |
+| **Amazon RDS** | Base de datos PostgreSQL 15 + pgvector para grafos, embeddings y estado | Acceso vía credenciales DB (no IAM Auth en MVP) — no requiere permisos IAM adicionales |
+| **Elastic Beanstalk** | Deployment de Backend y Analyzer | `elasticbeanstalk:*` scoped al environment |
+| **AWS Amplify** | Deployment del Frontend (Next.js SSR) | `amplify:*` scoped a la app |
+| **AWS Lambda** | Post-procesamiento (PDF, notificaciones) | `lambda:InvokeFunction` scoped a funciones del proyecto |
+| **CloudWatch Logs** | Logs de todos los servicios | `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` |
+
+### Comandos AWS CLI — Creación del Usuario
+
+Cada comando se ejecuta con un usuario administrador. Los comandos crean el usuario, le asignan una política inline con los mínimos permisos, y generan access keys para uso programático.
+
+#### Paso 1: Crear el usuario IAM (sin acceso a consola)
+
+```bash
+# Crea un usuario IAM programático (sin login de consola)
+# Justificación: Este usuario es para acceso por API/SDK desde los servicios,
+# no necesita acceso a la consola web de AWS.
+aws iam create-user \
+  --user-name kiro-archaeologist \
+  --tags Key=Project,Value=software-archaeologist Key=Environment,Value=production
+```
+
+#### Paso 2: Crear la política de permisos mínimos
+
+```bash
+# Crea una política gestionada del proyecto con mínimo privilegio.
+# Cada statement está documentado con su justificación (Sid).
+aws iam create-policy \
+  --policy-name SoftwareArchaeologistMinimalPolicy \
+  --policy-document file://apps/AWS/iam/policy-minimal.json \
+  --description "Minimal permissions for Software Archaeologist MVP - Bedrock, S3, Lambda, Logs"
+```
+
+**Contenido de `apps/AWS/iam/policy-minimal.json`:**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockInvokeModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-sonnet-20240229-v1:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"
+      ],
+      "Condition": {}
+    },
+    {
+      "Sid": "S3TemporaryRepoStorage",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::archaeologist-repos-*/*",
+      "Condition": {}
+    },
+    {
+      "Sid": "S3ReportsAndSpecs",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::archaeologist-reports-*/*",
+      "Condition": {}
+    },
+    {
+      "Sid": "S3ListBuckets",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": [
+        "arn:aws:s3:::archaeologist-repos-*",
+        "arn:aws:s3:::archaeologist-reports-*"
+      ],
+      "Condition": {}
+    },
+    {
+      "Sid": "LambdaInvokeProjectFunctions",
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:us-east-1:*:function:archaeologist-*",
+      "Condition": {}
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "arn:aws:logs:us-east-1:*:log-group:/archaeologist/*",
+      "Condition": {}
+    }
+  ]
+}
+```
+
+#### Paso 3: Adjuntar la política al usuario
+
+```bash
+# Adjunta la política al usuario.
+# Se usa --policy-arn que apunta a la política creada en Paso 2.
+# Reemplazar <ACCOUNT_ID> con tu ID de cuenta AWS (12 dígitos).
+aws iam attach-user-policy \
+  --user-name kiro-archaeologist \
+  --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/SoftwareArchaeologistMinimalPolicy
+```
+
+#### Paso 4: Generar Access Keys
+
+```bash
+# Genera un par de access key + secret key para uso programático.
+# IMPORTANTE: Guardar la SecretAccessKey de forma segura — solo se muestra una vez.
+# Estas credenciales van en .data/.env.prod (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+aws iam create-access-key \
+  --user-name kiro-archaeologist
+```
+
+#### Paso 5 (Opcional): Crear los buckets S3 con lifecycle
+
+```bash
+# Bucket para repos clonados temporales — lifecycle 24h
+# Justificación: Los repos se clonan, se analizan, y se eliminan.
+# El lifecycle de 24h es un safety net por si el cleanup del Analyzer falla.
+aws s3api create-bucket \
+  --bucket archaeologist-repos-prod \
+  --region us-east-1
+
+# Configurar lifecycle: eliminar objetos después de 1 día
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket archaeologist-repos-prod \
+  --lifecycle-configuration '{
+    "Rules": [
+      {
+        "ID": "DeleteAfter24h",
+        "Status": "Enabled",
+        "Filter": {"Prefix": ""},
+        "Expiration": {"Days": 1}
+      }
+    ]
+  }'
+
+# Bucket para reportes y specs generados — retención indefinida
+# Justificación: Los reportes son el output del sistema, se mantienen.
+aws s3api create-bucket \
+  --bucket archaeologist-reports-prod \
+  --region us-east-1
+```
+
+#### Paso 6 (Opcional): Habilitar Bedrock model access
+
+```bash
+# Verificar que los modelos de Bedrock están habilitados en la cuenta.
+# Si no están habilitados, se debe hacer desde la consola de AWS Bedrock
+# en la sección "Model access" (no disponible vía CLI para foundation models).
+# Modelos necesarios:
+#   - anthropic.claude-3-sonnet-20240229-v1:0 (agentes IA)
+#   - amazon.titan-embed-text-v2:0 (embeddings RAG)
+aws bedrock list-foundation-models \
+  --region us-east-1 \
+  --query "modelSummaries[?modelId=='anthropic.claude-3-sonnet-20240229-v1:0' || modelId=='amazon.titan-embed-text-v2:0'].{id:modelId,status:modelLifecycle.status}"
+```
+
+### Justificación Detallada de Cada Permiso
+
+| Permiso | Por qué se necesita | Qué pasa sin él |
+|---------|--------------------|--------------------|
+| `bedrock:InvokeModel` | Los agentes (Architecture, Quality, Security, Documentation, Modernization, Kiro) usan Claude Sonnet para razonamiento. El RAG usa Titan Embeddings para generar vectores de consulta. | Pipeline de agentes falla completamente. Chat RAG no funciona. |
+| `bedrock:InvokeModelWithResponseStream` | Chat RAG usa streaming para devolver tokens al usuario en tiempo real vía SSE. | Chat funciona pero sin streaming — experiencia degradada. |
+| `s3:PutObject` (repos) | El Analyzer sube repos clonados a S3 en producción en lugar de usar disco local efímero. | No se pueden clonar repos en producción (EB no tiene disco persistente). |
+| `s3:GetObject` (repos) | Lectura del repo clonado para parseo AST. | Pipeline no puede leer el código fuente. |
+| `s3:DeleteObject` (repos) | Cleanup explícito después de completar el análisis. | Repos se acumulan hasta que lifecycle los borre a las 24h. |
+| `s3:PutObject` (reports) | Persistir reportes y Kiro specs generados. | No se pueden guardar ni descargar los artefactos. |
+| `s3:GetObject` (reports) | El Backend sirve reportes al Frontend para descarga. | Export de Kiro spec falla. |
+| `s3:ListBucket` | Listar objetos para verificar existencia antes de acceder. | Errores 404 no manejables correctamente. |
+| `lambda:InvokeFunction` | Post-procesamiento: generación de PDF del reporte, notificaciones. | Features auxiliares no funcionan (no crítico para MVP core). |
+| `logs:CreateLogGroup` | Crear grupos de log para cada servicio al primer deployment. | Logs no se persisten — debugging en producción imposible. |
+| `logs:CreateLogStream` | Crear streams dentro del grupo para cada instancia/ejecución. | Mismo impacto que arriba. |
+| `logs:PutLogEvents` | Escribir entradas de log desde los servicios. | Sin observabilidad en producción. |
+| `logs:DescribeLogStreams` | Listar streams para rotación y consulta. | No se pueden consultar logs programáticamente. |
+
+### Permisos NO Incluidos (y por qué)
+
+| Permiso Excluido | Razón |
+|------------------|-------|
+| `rds:*` | RDS se accede vía credenciales PostgreSQL estándar (user/password en env vars), no IAM Database Authentication. Para MVP es más simple y no requiere permisos IAM adicionales. |
+| `ec2:*` | Elastic Beanstalk gestiona EC2 internamente con su service role. El usuario de aplicación no necesita EC2 directo. |
+| `iam:*` | El usuario NO debe poder modificar sus propios permisos ni crear otros usuarios. |
+| `s3:CreateBucket` | Los buckets se crean una sola vez por el admin durante setup. El usuario de aplicación no debe poder crear buckets. |
+| `bedrock:GetFoundationModel` | Solo se necesita invocar, no consultar metadata de modelos. |
+| `amplify:*` | Amplify se gestiona con su propio service role al conectar con Git. El usuario de app no deploya el frontend. |
+
+### Seguridad Adicional
+
+```bash
+# (Opcional) Restringir el usuario a una IP o VPC específica
+# Útil si los servicios siempre corren desde la misma red.
+# Agregar esta Condition a cada Statement de la política:
+#
+# "Condition": {
+#   "IpAddress": {
+#     "aws:SourceIp": ["203.0.113.0/24"]
+#   }
+# }
+
+# (Opcional) Forzar MFA para operaciones sensibles
+# No aplica a usuarios programáticos (access keys), solo a consola.
+
+# Verificar que el usuario no tiene permisos excesivos:
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::<ACCOUNT_ID>:user/kiro-archaeologist \
+  --action-names "s3:DeleteBucket" "iam:CreateUser" "ec2:RunInstances" \
+  --output table
+```
+
+### Resumen de Recursos Creados
+
+| Recurso | Nombre | Propósito |
+|---------|--------|-----------|
+| IAM User | `kiro-archaeologist` | Acceso programático desde servicios |
+| IAM Policy | `SoftwareArchaeologistMinimalPolicy` | Permisos mínimos del proyecto |
+| S3 Bucket | `archaeologist-repos-prod` | Repos temporales (lifecycle 24h) |
+| S3 Bucket | `archaeologist-reports-prod` | Reportes y specs persistentes |
+| Access Key | Generada en Paso 4 | Credenciales para .env.prod |

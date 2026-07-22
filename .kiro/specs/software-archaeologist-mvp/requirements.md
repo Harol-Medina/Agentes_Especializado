@@ -179,3 +179,19 @@ Software Archaeologist es una plataforma de análisis inteligente de repositorio
 2. IF any agent after Repository_Agent fails, THEN THE Analyzer SHALL continue the pipeline with available data from previously successful agents
 3. WHEN the Analysis_Job completes with partial results, THE Frontend SHALL display available sections and mark failed sections with a clear "incomplete" indicator
 4. THE Architecture_Report and Kiro_Spec SHALL include metadata indicating which agents completed successfully and which were skipped
+
+### Requirement 14: AWS IAM — Principio de Mínimo Privilegio
+
+**User Story:** As a platform operator, I want a dedicated AWS IAM user with only the permissions required to operate the platform, so that the blast radius of a credential leak is minimized and compliance requirements are met.
+
+#### Acceptance Criteria
+
+1. THE Platform SHALL operate under a dedicated IAM user `kiro-archaeologist` with programmatic access only (no console login)
+2. THE IAM policy SHALL grant `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream` ONLY for the specific foundation models used: `anthropic.claude-3-sonnet-20240229-v1:0` and `amazon.titan-embed-text-v2:0`
+3. THE IAM policy SHALL grant S3 permissions (`PutObject`, `GetObject`, `DeleteObject`, `ListBucket`) ONLY to buckets with the prefix `archaeologist-repos-*` and `archaeologist-reports-*`
+4. THE IAM policy SHALL grant `lambda:InvokeFunction` ONLY to Lambda functions with the prefix `archaeologist-*`
+5. THE IAM policy SHALL grant CloudWatch Logs permissions (`CreateLogGroup`, `CreateLogStream`, `PutLogEvents`, `DescribeLogStreams`) ONLY to log groups under `/archaeologist/*`
+6. THE IAM policy SHALL NOT include permissions for `iam:*`, `ec2:*`, `rds:*`, `s3:CreateBucket`, `s3:DeleteBucket`, or any administrative actions
+7. THE Platform SHALL document all IAM setup commands in `apps/AWS/iam/` with inline comments explaining the purpose of each permission
+8. THE S3 bucket for temporary repos (`archaeologist-repos-prod`) SHALL have a lifecycle policy that deletes objects after 24 hours
+9. THE Platform SHALL provide a verification command (`iam simulate-principal-policy`) to confirm the user cannot perform destructive or out-of-scope actions
