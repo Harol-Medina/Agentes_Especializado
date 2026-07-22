@@ -1,0 +1,788 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create project directory structure and Docker Compose configuration": [
+      {
+        "executionId": "e6695595-38e8-40ee-a458-ef335b257ec1",
+        "chatSessionId": "sess_906cd2d1-6775-4da1-8561-8f690d347f8b",
+        "timestamp": 1784739222221
+      },
+      {
+        "executionId": "e6695595-38e8-40ee-a458-ef335b257ec1",
+        "chatSessionId": "sess_906cd2d1-6775-4da1-8561-8f690d347f8b",
+        "timestamp": 1784739418381
+      }
+    ],
+    "1.2 Create PostgreSQL schema and migrations": [
+      {
+        "executionId": "17818863-a6d3-4fd8-9db8-c82107b01174",
+        "chatSessionId": "sess_3ca8fb5e-7380-43c0-b2b2-4087757fb7b3",
+        "timestamp": 1784739528549
+      },
+      {
+        "executionId": "17818863-a6d3-4fd8-9db8-c82107b01174",
+        "chatSessionId": "sess_3ca8fb5e-7380-43c0-b2b2-4087757fb7b3",
+        "timestamp": 1784739616131
+      }
+    ],
+    "1. Infrastructure and Database Setup": [
+      {
+        "executionId": "17818863-a6d3-4fd8-9db8-c82107b01174",
+        "chatSessionId": "sess_3ca8fb5e-7380-43c0-b2b2-4087757fb7b3",
+        "timestamp": 1784739616201
+      }
+    ],
+    "2.1 Initialize Spring Boot project with domain models and configuration": [
+      {
+        "executionId": "84403685-3c85-43f9-9344-2bddfa404276",
+        "chatSessionId": "sess_3f29cab6-d3dc-4753-929e-0941277b9a59",
+        "timestamp": 1784739681055
+      },
+      {
+        "executionId": "84403685-3c85-43f9-9344-2bddfa404276",
+        "chatSessionId": "sess_3f29cab6-d3dc-4753-929e-0941277b9a59",
+        "timestamp": 1784741192885
+      }
+    ],
+    "2.2 Implement URL validation and job submission endpoint": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357302
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743793534
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784744211415
+      }
+    ],
+    "2.5 Implement job status polling and webhook receiver": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357333
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714364
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748734920
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834080
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749858513
+      }
+    ],
+    "2.6 Implement Analyzer HTTP client": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357375
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714424
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748735953
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834115
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749859317
+      }
+    ],
+    "3. Checkpoint - Backend foundation verified": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357422
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714462
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834146
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749868817
+      }
+    ],
+    "4.1 Initialize FastAPI project with domain models and configuration": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357484
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743083882
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743774992
+      }
+    ],
+    "4.2 Implement base agent interface and pipeline orchestrator": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357510
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743794441
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784744213489
+      }
+    ],
+    "4.4 Implement Repository Agent (critical path)": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357537
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784744226675
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748690064
+      }
+    ],
+    "4.8 Implement analysis API endpoints": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357564
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714500
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748736684
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834177
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749860101
+      }
+    ],
+    "5. Checkpoint - Analyzer foundation verified": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357591
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714541
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834245
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749869386
+      }
+    ],
+    "6.1 Implement Architecture, Quality, Security, Documentation agents": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357616
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714587
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748737631
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834279
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749860914
+      }
+    ],
+    "6.2 Implement Modernization and Kiro agents": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357644
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714617
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834303
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749883325
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750238138
+      }
+    ],
+    "7.1 Implement embedding generation and pgvector indexing": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357675
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714647
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748739250
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834329
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749861822
+      }
+    ],
+    "7.3 Implement RAG retriever and query endpoint": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357716
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714675
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834354
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749884359
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750236294
+      }
+    ],
+    "8. Checkpoint - Analyzer pipeline complete": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357780
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714709
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834382
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750245555
+      }
+    ],
+    "9.1 Implement Chat SSE relay endpoint": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357807
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714735
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834407
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749885182
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750237108
+      }
+    ],
+    "9.2 Implement Graph, Report, and Export endpoints": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357835
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714760
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834436
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749886097
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750234687
+      }
+    ],
+    "10.1 Initialize Next.js project with layout and design system": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357862
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741369419
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743071294
+      }
+    ],
+    "10.2 Implement repository submission page": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357890
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743795185
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784744212359
+      }
+    ],
+    "10.3 Implement analysis progress page": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357919
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714814
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834464
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749886960
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750235476
+      }
+    ],
+    "11.1 Implement interactive dependency graph view": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357945
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714842
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834488
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750246555
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750622967
+      }
+    ],
+    "12.1 Implement RAG chat interface": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357972
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714874
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834520
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750247548
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750623586
+      }
+    ],
+    "13.1 Implement architecture report view": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741357997
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714903
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834588
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750248385
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750624438
+      }
+    ],
+    "13.2 Implement Kiro spec export": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358024
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714927
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834620
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750249374
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750625340
+      }
+    ],
+    "14.1 Wire all services end-to-end and verify Docker Compose": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358054
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714959
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834649
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750632672
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750779636
+      }
+    ],
+    "15. Final Checkpoint - All services integrated": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358125
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784748714988
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749834673
+      },
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750780778
+      }
+    ],
+    "16.1 Create IAM user and minimal policy": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358152
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741370132
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743072133
+      }
+    ],
+    "16.2 Create S3 buckets with lifecycle policies": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358180
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743084769
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743776012
+      }
+    ],
+    "16.3 Create verification script": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358207
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743085269
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743776677
+      }
+    ],
+    "16.4 Document Bedrock model access verification": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784741358235
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743086248
+      },
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743777701
+      }
+    ],
+    "16. AWS IAM Setup and Infrastructure": [
+      {
+        "executionId": "a01cc390-425f-4730-9bcc-36c1f44be9cf",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784743777747
+      }
+    ],
+    "2. Backend Service Skeleton (Java 21 / Spring Boot 3.x)": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749859360
+      }
+    ],
+    "4. Analyzer Service Skeleton (Python 3.11+ / FastAPI)": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784749860169
+      }
+    ],
+    "10. Frontend — Submission and Progress": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750235504
+      }
+    ],
+    "7. RAG System (Embeddings + Chat)": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750236321
+      }
+    ],
+    "9. Backend API Completion": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750237174
+      }
+    ],
+    "6. Remaining Agents Implementation": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750238168
+      }
+    ],
+    "11. Frontend — Dependency Graph": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750623014
+      }
+    ],
+    "12. Frontend — Chat Interface": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750623622
+      }
+    ],
+    "13. Frontend — Report and Export": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750625375
+      }
+    ],
+    "14. Integration and Wiring": [
+      {
+        "executionId": "27d23564-3c4a-4013-a736-ea843f25f1bb",
+        "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
+        "timestamp": 1784750779684
+      }
+    ]
+  }
+}

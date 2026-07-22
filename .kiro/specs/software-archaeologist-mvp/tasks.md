@@ -6,8 +6,8 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
 
 ## Tasks
 
-- [ ] 1. Infrastructure and Database Setup
-  - [ ] 1.1 Create project directory structure and Docker Compose configuration
+- [x] 1. Infrastructure and Database Setup
+  - [x] 1.1 Create project directory structure and Docker Compose configuration
     - Create `docker-compose.yml` at project root with 5 services: nginx, frontend, backend, analyzer, db (pgvector/pgvector:pg15)
     - Create `docker/backend/Dockerfile` (Java 21 + Gradle)
     - Create `docker/frontend/Dockerfile` (Node 20 + Next.js)
@@ -16,22 +16,22 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Create `.data/.env` with all environment variables (PostgreSQL, Spring, FastAPI, AWS, Next.js)
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-  - [ ] 1.2 Create PostgreSQL schema and migrations
+  - [x] 1.2 Create PostgreSQL schema and migrations
     - Create Flyway migration `V1__initial_schema.sql` in `apps/backend/src/main/resources/db/migration/`
     - Include tables: `analysis_jobs`, `projects`, `graph_nodes`, `graph_edges`, `agent_results`, `code_embeddings`, `architecture_reports`, `kiro_specs`
     - Enable `pgvector` extension and create IVFFlat index on embeddings
     - Create all indexes as defined in the design
     - _Requirements: 3.5, 11.4_
 
-- [ ] 2. Backend Service Skeleton (Java 21 / Spring Boot 3.x)
-  - [ ] 2.1 Initialize Spring Boot project with domain models and configuration
+- [x] 2. Backend Service Skeleton (Java 21 / Spring Boot 3.x)
+  - [x] 2.1 Initialize Spring Boot project with domain models and configuration
     - Create `apps/backend/` with Gradle build (Spring Boot 3.x, Java 21, WebFlux, JPA, Flyway, PostgreSQL driver)
     - Implement domain models: `AnalysisJob`, `Project`, `JobStatus` enum, `AgentResult`
     - Implement JPA entities and repository interfaces
     - Configure `application.yml` with datasource, Flyway, server port
     - _Requirements: 11.1, 12.1_
 
-  - [ ] 2.2 Implement URL validation and job submission endpoint
+  - [x] 2.2 Implement URL validation and job submission endpoint
     - Create `GitHubUrlValidator` with regex pattern matching and HEAD request validation
     - Create `JobQueueService` with `AtomicReference<UUID>` for single-slot processing
     - Create `AnalysisJobController` with `POST /api/v1/jobs` endpoint
@@ -47,23 +47,23 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 2: Sequential Processing Invariant**
     - **Validates: Requirements 1.4, 10.1, 10.2, 10.3**
 
-  - [ ] 2.5 Implement job status polling and webhook receiver
+  - [x] 2.5 Implement job status polling and webhook receiver
     - Create `GET /api/v1/jobs/{jobId}` endpoint returning progress with agent statuses
     - Create `WebhookController` with `POST /api/webhooks/analysis-complete`
     - Implement `PollingScheduler` with @Scheduled task polling Analyzer every 5s
     - On webhook receipt: update job status, release processing slot, persist results
     - _Requirements: 9.1, 9.2, 9.3, 12.2, 12.3, 10.3_
 
-  - [ ] 2.6 Implement Analyzer HTTP client
+  - [x] 2.6 Implement Analyzer HTTP client
     - Create `AnalyzerClient` using WebClient to call `POST /analyze`, `GET /jobs/{id}`, `GET /graph/{projectId}`, `POST /query`
     - Handle 202 responses, timeout configuration, error mapping
     - _Requirements: 12.1, 12.2, 12.4, 12.5_
 
-- [ ] 3. Checkpoint - Backend foundation verified
+- [x] 3. Checkpoint - Backend foundation verified
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Analyzer Service Skeleton (Python 3.11+ / FastAPI)
-  - [ ] 4.1 Initialize FastAPI project with domain models and configuration
+- [x] 4. Analyzer Service Skeleton (Python 3.11+ / FastAPI)
+  - [x] 4.1 Initialize FastAPI project with domain models and configuration
     - Create `apps/analyzer/` with `pyproject.toml`, `requirements.txt`
     - Create `src/main.py` FastAPI app entrypoint
     - Implement domain models: `ProjectModel`, `GraphNode`, `GraphEdge`, `AnalysisJob`, `AgentResult`, enums (`NodeType`, `EdgeType`, `JobStatus`, `AgentStatus`)
@@ -71,7 +71,7 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Create `src/api/schemas.py` with Pydantic request/response models
     - _Requirements: 6.1, 11.1_
 
-  - [ ] 4.2 Implement base agent interface and pipeline orchestrator
+  - [x] 4.2 Implement base agent interface and pipeline orchestrator
     - Create `src/agents/base.py` with `BaseAgent` abstract class (name, execution_order, execute, can_execute)
     - Create `PipelineContext` dataclass with accumulated context fields
     - Create `AgentOutput` dataclass
@@ -83,7 +83,7 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 9: Pipeline Sequential Data Flow with Graceful Degradation**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-  - [ ] 4.4 Implement Repository Agent (critical path)
+  - [x] 4.4 Implement Repository Agent (critical path)
     - Create `src/agents/repository_agent.py` with git clone, language detection, AST parsing, graph construction
     - Create `src/adapters/git_adapter.py` for cloning operations with size validation
     - Create `src/parsing/language_detector.py` with marker-based detection (Java, TypeScript, JavaScript frameworks)
@@ -104,18 +104,18 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 5: Project Model Node Completeness**
     - **Validates: Requirements 3.2, 3.3, 3.4**
 
-  - [ ] 4.8 Implement analysis API endpoints
+  - [x] 4.8 Implement analysis API endpoints
     - Create `src/api/routes/analyze.py` with `POST /analyze` (202 Accepted, async execution)
     - Create `src/api/routes/jobs.py` with `GET /jobs/{job_id}` for status polling
     - Create `src/adapters/webhook_adapter.py` for notifying Backend on completion
     - Wire pipeline execution as background task on POST /analyze
     - _Requirements: 12.1, 12.3, 6.5_
 
-- [ ] 5. Checkpoint - Analyzer foundation verified
+- [x] 5. Checkpoint - Analyzer foundation verified
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Remaining Agents Implementation
-  - [ ] 6.1 Implement Architecture, Quality, Security, Documentation agents
+- [x] 6. Remaining Agents Implementation
+  - [x] 6.1 Implement Architecture, Quality, Security, Documentation agents
     - Create `src/agents/architecture_agent.py` — pattern detection, layer analysis using Claude Sonnet
     - Create `src/agents/quality_agent.py` — complexity metrics, code smell detection via Bedrock
     - Create `src/agents/security_agent.py` — vulnerability scanning via Bedrock
@@ -123,7 +123,7 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Create `src/adapters/bedrock_adapter.py` for AWS Bedrock client (Claude Sonnet + retry with exponential backoff)
     - _Requirements: 6.1, 6.4, 7.1_
 
-  - [ ] 6.2 Implement Modernization and Kiro agents
+  - [x] 6.2 Implement Modernization and Kiro agents
     - Create `src/agents/modernization_agent.py` — refactoring plan generation via Bedrock
     - Create `src/agents/kiro_agent.py` — transforms modernization plan into Kiro Spec markdown format
     - Handle partial generation when Modernization_Agent fails (use Architecture_Report data)
@@ -137,8 +137,8 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 11: Kiro Spec Structural Completeness**
     - **Validates: Requirements 8.1, 8.3**
 
-- [ ] 7. RAG System (Embeddings + Chat)
-  - [ ] 7.1 Implement embedding generation and pgvector indexing
+- [x] 7. RAG System (Embeddings + Chat)
+  - [x] 7.1 Implement embedding generation and pgvector indexing
     - Create `src/rag/embeddings.py` with Titan Embeddings V2 client via Bedrock
     - Create `src/parsing/chunker.py` with AST-aware chunking (function/method boundaries, context headers)
     - Create `src/rag/indexer.py` for pgvector bulk insert of embeddings
@@ -150,7 +150,7 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 7: AST-Aware Chunking Preserves Function Boundaries**
     - **Validates: Requirements 5.2**
 
-  - [ ] 7.3 Implement RAG retriever and query endpoint
+  - [x] 7.3 Implement RAG retriever and query endpoint
     - Create `src/rag/retriever.py` with semantic search (pgvector cosine similarity), architectural re-ranking, relevance threshold (0.65)
     - Create `src/rag/generator.py` for Claude Sonnet response generation with retrieved context
     - Create `src/api/routes/query.py` with `POST /query` (SSE streaming response)
@@ -161,16 +161,16 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 8: RAG No-Context Threshold**
     - **Validates: Requirements 5.6**
 
-- [ ] 8. Checkpoint - Analyzer pipeline complete
+- [x] 8. Checkpoint - Analyzer pipeline complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Backend API Completion
-  - [ ] 9.1 Implement Chat SSE relay endpoint
+- [x] 9. Backend API Completion
+  - [x] 9.1 Implement Chat SSE relay endpoint
     - Create `ChatController` with `POST /api/v1/chat` that forwards to Analyzer and relays SSE stream to Frontend
     - Use Spring WebFlux for non-blocking SSE relay
     - _Requirements: 5.5, 12.4_
 
-  - [ ] 9.2 Implement Graph, Report, and Export endpoints
+  - [x] 9.2 Implement Graph, Report, and Export endpoints
     - Create `GraphController` with `GET /api/v1/projects/{id}/graph` (query params: module, edgeType, depth)
     - Create `ReportController` with `GET /api/v1/projects/{id}/report` returning structured JSON
     - Create `ExportController` with `GET /api/v1/projects/{id}/kiro-spec` returning markdown file download
@@ -181,8 +181,8 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 6: Graph Filtering Correctness**
     - **Validates: Requirements 4.4**
 
-- [ ] 10. Frontend — Submission and Progress
-  - [ ] 10.1 Initialize Next.js project with layout and design system
+- [x] 10. Frontend — Submission and Progress
+  - [x] 10.1 Initialize Next.js project with layout and design system
     - Create `apps/frontend/` with Next.js 14+ App Router, TypeScript, Tailwind CSS
     - Configure `tailwind.config.ts` with design system tokens (colors, fonts, spacing per design-system steering)
     - Create root `layout.tsx` with dark theme, Google Fonts (Roboto Slab, Inter, JetBrains Mono)
@@ -190,22 +190,22 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Install shadcn/ui for primitive components
     - _Requirements: 11.1_
 
-  - [ ] 10.2 Implement repository submission page
+  - [x] 10.2 Implement repository submission page
     - Create landing `page.tsx` with hero layout (1fr 420px grid)
     - Create `SubmissionForm` component with URL input, validation, submit action
     - Implement client-side validation for GitHub URL format
     - Handle API responses: success (redirect to analysis page), 400 (show error), 409 (show busy message)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 10.2_
 
-  - [ ] 10.3 Implement analysis progress page
+  - [x] 10.3 Implement analysis progress page
     - Create `analysis/[jobId]/page.tsx` as analysis dashboard layout with tabs
     - Create `PipelineProgress` component showing 7 agent stages with status dots (glow animation for active)
     - Create `useAnalysisStatus` hook polling `GET /api/v1/jobs/{jobId}` every 5s
     - Display current agent, completed count, and handle failure indicators
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 13.3_
 
-- [ ] 11. Frontend — Dependency Graph
-  - [ ] 11.1 Implement interactive dependency graph view
+- [x] 11. Frontend — Dependency Graph
+  - [x] 11.1 Implement interactive dependency graph view
     - Install React Flow library
     - Create `components/graph/DependencyGraph.tsx` with React Flow wrapper
     - Create custom node types: `ModuleNode`, `PackageNode`, `FileNode`, `ClassNode`, `ExternalNode` (distinct visual style)
@@ -219,8 +219,8 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - **Property 12: External Dependency Visual Distinction**
     - **Validates: Requirements 4.3**
 
-- [ ] 12. Frontend — Chat Interface
-  - [ ] 12.1 Implement RAG chat interface
+- [x] 12. Frontend — Chat Interface
+  - [x] 12.1 Implement RAG chat interface
     - Create `components/chat/ChatInterface.tsx` with message list and input
     - Create `components/chat/ChatMessage.tsx` for user and assistant messages
     - Create `useSSEChat` hook connecting to `POST /api/v1/chat` with SSE streaming
@@ -229,22 +229,22 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Create BFF route in `app/api/` for SSE proxy if needed
     - _Requirements: 5.3, 5.5, 5.6_
 
-- [ ] 13. Frontend — Report and Export
-  - [ ] 13.1 Implement architecture report view
+- [x] 13. Frontend — Report and Export
+  - [x] 13.1 Implement architecture report view
     - Create `components/report/ArchitectureReport.tsx` with formatted sections
     - Display: language/framework info, module structure, dependencies (internal/external), components with responsibilities, metrics
     - Show "Analysis incomplete" indicators for failed sections with explanation
     - Fetch report from `GET /api/v1/projects/{id}/report`
     - _Requirements: 7.1, 7.2, 7.3, 13.3, 13.4_
 
-  - [ ] 13.2 Implement Kiro spec export
+  - [x] 13.2 Implement Kiro spec export
     - Create `components/export/KiroExport.tsx` with download button
     - Trigger download from `GET /api/v1/projects/{id}/kiro-spec` as markdown file
     - Show partial spec indicator when Modernization_Agent failed
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 14. Integration and Wiring
-  - [ ] 14.1 Wire all services end-to-end and verify Docker Compose
+- [x] 14. Integration and Wiring
+  - [x] 14.1 Wire all services end-to-end and verify Docker Compose
     - Ensure all services start correctly with `docker compose up`
     - Verify nginx routing: /api/* → backend:8080, /* → frontend:3000
     - Verify Backend ↔ Analyzer communication (POST /analyze, polling, webhook)
@@ -258,30 +258,30 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - Test system busy: concurrent submissions rejected with 409
     - _Requirements: 1.2, 1.4, 6.3, 10.1, 13.1, 13.2, 13.3_
 
-- [ ] 15. Final Checkpoint - All services integrated
+- [x] 15. Final Checkpoint - All services integrated
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. AWS IAM Setup and Infrastructure
-  - [ ] 16.1 Create IAM user and minimal policy
+- [x] 16. AWS IAM Setup and Infrastructure
+  - [x] 16.1 Create IAM user and minimal policy
     - Create `apps/AWS/iam/policy-minimal.json` with the documented IAM policy (Bedrock, S3, Lambda, CloudWatch scoped)
     - Create `apps/AWS/iam/setup.sh` script with all AWS CLI commands documented (create-user, create-policy, attach-user-policy, create-access-key)
     - Each command includes inline comments explaining purpose and justification
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
 
-  - [ ] 16.2 Create S3 buckets with lifecycle policies
+  - [x] 16.2 Create S3 buckets with lifecycle policies
     - Create `apps/AWS/s3/create-buckets.sh` with commands to create `archaeologist-repos-prod` and `archaeologist-reports-prod`
     - Configure lifecycle policy on repos bucket: delete objects after 24 hours
     - Document why each bucket exists and its retention policy
     - _Requirements: 14.3, 14.8_
 
-  - [ ] 16.3 Create verification script
+  - [x] 16.3 Create verification script
     - Create `apps/AWS/iam/verify-permissions.sh` that runs `aws iam simulate-principal-policy` against destructive actions
     - Verify user CANNOT: `s3:DeleteBucket`, `iam:CreateUser`, `ec2:RunInstances`, `rds:DeleteDBInstance`
     - Verify user CAN: `bedrock:InvokeModel`, `s3:PutObject` on allowed buckets, `logs:PutLogEvents`
     - Output clear PASS/FAIL table for each permission check
     - _Requirements: 14.6, 14.9_
 
-  - [ ] 16.4 Document Bedrock model access verification
+  - [x] 16.4 Document Bedrock model access verification
     - Create `apps/AWS/bedrock/verify-models.sh` with command to check model availability
     - Include instructions for enabling models via console if not accessible
     - List exact model IDs required: `anthropic.claude-3-sonnet-20240229-v1:0`, `amazon.titan-embed-text-v2:0`
