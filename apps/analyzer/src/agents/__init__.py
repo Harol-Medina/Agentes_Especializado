@@ -8,6 +8,8 @@ from src.agents.base import (
 )
 from src.agents.architecture_agent import ArchitectureAgent
 from src.agents.documentation_agent import DocumentationAgent
+from src.agents.kiro_agent import KiroAgent
+from src.agents.modernization_agent import ModernizationAgent
 from src.agents.quality_agent import QualityAgent
 from src.agents.repository_agent import RepositoryAgent
 from src.agents.security_agent import SecurityAgent
@@ -18,6 +20,8 @@ __all__ = [
     "ArchitectureAgent",
     "BaseAgent",
     "DocumentationAgent",
+    "KiroAgent",
+    "ModernizationAgent",
     "PipelineContext",
     "QualityAgent",
     "RepositoryAgent",
