@@ -1,8 +1,9 @@
 # Stage 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
+COPY apps/frontend/package.json ./
+RUN npm install
 COPY apps/frontend/ .
-RUN npm ci
 RUN npm run build
 
 # Stage 2: Runtime
