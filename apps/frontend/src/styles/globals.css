@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* =============================================
+   Design System — CSS Custom Properties
+   Dark-first theme (no light variant)
+   ============================================= */
+
+:root {
+  /* --- Core backgrounds --- */
+  --background: #080D18;
+  --foreground: #F0F4FF;
+
+  /* --- Card surfaces --- */
+  --card: #0F1624;
+  --card-foreground: #E2E8F0;
+
+  /* --- Primary accent: amber/gold --- */
+  --primary: #F59E0B;
+  --primary-foreground: #080D18;
+
+  /* --- Secondary accent: cyan --- */
+  --secondary: #06B6D4;
+  --secondary-foreground: #080D18;
+
+  /* --- Muted / subdued --- */
+  --muted: #1E2A3A;
+  --muted-foreground: #6B7A99;
+
+  /* --- Accent (same as primary for highlights) --- */
+  --accent: #F59E0B;
+  --accent-foreground: #080D18;
+
+  /* --- Borders & interaction --- */
+  --border: #1E2D45;
+  --ring: #F59E0B;
+
+  /* --- Geometry --- */
+  --radius: 6px;
+
+  /* --- Typography --- */
+  --font-display: 'Roboto Slab', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* =============================================
+   Base Resets & Global Styles
+   ============================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* =============================================
+   Typography
+   ============================================= */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+h1 {
+  font-size: clamp(28px, 4vw, 48px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h3 {
+  font-size: 16px;
+}
+
+p {
+  color: var(--foreground);
+  line-height: 1.7;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+/* =============================================
+   Layout Container
+   ============================================= */
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+/* =============================================
+   Scrollbar
+   ============================================= */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* =============================================
+   Focus styles (accessibility)
+   ============================================= */
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* =============================================
+   Utility classes (non-Tailwind)
+   ============================================= */
+
+/* Grid background pattern */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(30, 45, 69, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 45, 69, 0.4) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+}
+
+/* Hero glow */
+.hero-glow {
+  background: radial-gradient(ellipse 600px 300px at 50% 0%, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+}
+
+/* Status dot pulse animation */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* =============================================
+   Responsive breakpoints
+   ============================================= */
+
+@media (max-width: 900px) {
+  .grid-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .grid-main-content {
+    grid-template-columns: 1fr !important;
+  }
+}
