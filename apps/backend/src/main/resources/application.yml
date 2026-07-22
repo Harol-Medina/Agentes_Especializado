@@ -24,6 +24,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: false
 
+app:
+  webhook-secret: ${WEBHOOK_SECRET:shared_webhook_secret}
+
+analyzer:
+  base-url: ${ANALYZER_BASE_URL:http://analyzer:8000}
+  timeout:
+    rest-seconds: 10
+    stream-seconds: 120
+
 management:
   endpoints:
     web:
