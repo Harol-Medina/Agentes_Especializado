@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Code Review Senior Post-Tarea",
+      "trigger": "PostTaskExec",
+      "description": "Ejecuta un code review como senior engineer cuando se completa una tarea del spec. Revisa corrección funcional, seguridad, arquitectura, rendimiento y adherencia al proyecto.",
+      "action": {
+        "type": "agent",
+        "prompt": "Acabas de completar una tarea. Ahora actúa como el agente Code Reviewer Senior definido en .kiro/agents/engineering/code-reviewer.md.\n\nRevisa TODOS los archivos modificados en esta tarea. Sigue este proceso:\n\n1. Identifica los archivos que fueron creados o modificados durante esta tarea\n2. Lee cada archivo modificado\n3. Aplica la revisión en orden: Corrección Funcional > Seguridad > Arquitectura > Rendimiento > Mantenibilidad > Adherencia al Proyecto\n4. Produce el reporte en el formato definido por el agente (Veredicto + Hallazgos + Resumen)\n\nSi encuentras issues 🔴 Críticos o 🟡 Importantes:\n- Corrígelos inmediatamente\n- Documenta qué corregiste y por qué\n\nSi todo está ✅ Aprobado:\n- Indica brevemente qué se revisó y confirma que pasa la revisión\n\nReglas:\n- No aprobar código con vulnerabilidades de seguridad\n- No aprobar código que rompa la estructura del proyecto (app code en apps/, infra en raíz)\n- Ser específico con líneas y sugerencias de fix\n- Si corriges algo, esto cuenta como autocorrección y debe registrarse en lecciones aprendidas"
+      }
+    }
+  ]
+}

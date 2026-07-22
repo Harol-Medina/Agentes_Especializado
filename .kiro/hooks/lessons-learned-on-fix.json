@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Registrar Lección Aprendida al Autocorregirse",
+      "trigger": "PostTaskExec",
+      "description": "Cuando Kiro se autocorrige tras un code review, registra la lección en el steering de lecciones aprendidas para evitar repetir el mismo error.",
+      "action": {
+        "type": "agent",
+        "prompt": "Revisa si durante esta tarea hiciste alguna corrección a tu propio código (errores que generaste y luego arreglaste, feedback del code review que requirió cambios, o bugs que introdujiste).\n\nSi hubo autocorrecciones:\n1. Abre el archivo .kiro/steering/lessons-learned.md\n2. Agrega una nueva entrada ANTES del comentario <!-- LESSONS_END --> con el formato:\n\n### [FECHA_HOY] Título breve del problema\n\n- **Qué pasó**: Descripción del error\n- **Causa raíz**: Por qué ocurrió\n- **Corrección**: Qué se hizo para arreglarlo\n- **Lección**: Regla o patrón a recordar\n- **Archivos afectados**: Lista de archivos\n\nSi NO hubo autocorrecciones en esta tarea, no hagas nada. No registres entradas vacías o falsas."
+      }
+    }
+  ]
+}
