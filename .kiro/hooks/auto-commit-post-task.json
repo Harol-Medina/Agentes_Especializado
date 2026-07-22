@@ -2,12 +2,12 @@
   "version": "v1",
   "hooks": [
     {
-      "name": "Commit Automático en Español Post-Tarea",
+      "name": "Commit Automático en Ingles Post-Tarea",
       "trigger": "PostTaskExec",
-      "description": "Después de que una tarea es completada, revisada y corregida, genera un commit simple en español con los cambios aplicados.",
+      "description": "Después de que una tarea es completada, revisada y corregida, genera un commit simple en Ingles con los cambios aplicados.",
       "action": {
         "type": "agent",
-        "prompt": "La tarea ha sido completada y revisada. Ahora haz un commit de los cambios:\n\n1. Ejecuta `git status` para ver qué archivos fueron modificados/creados\n2. Si hay cambios sin commitear:\n   a. Agrega SOLO los archivos relevantes a esta tarea (no usar git add -A ni git add .)\n   b. Escribe un mensaje de commit en español, simple y descriptivo\n   c. El mensaje debe describir QUÉ se hizo, no CÓMO\n   d. Formato: sin prefijos tipo \"feat:\" o \"fix:\" — solo la descripción directa\n   e. Ejecuta el commit\n\nEjemplos de buenos mensajes:\n- \"Agregar steering de continuidad y lecciones aprendidas\"\n- \"Crear hook de code review automático post-tarea\"\n- \"Corregir validación de email en formulario de registro\"\n- \"Implementar paginación en endpoint de usuarios\"\n\nReglas:\n- Nunca hacer push (solo commit local)\n- Nunca commitear archivos .env o secrets\n- Si no hay cambios pendientes, no hacer nada\n- Un commit por tarea completada"
+        "prompt": "La tarea ha sido completada y revisada. Ahora haz un commit de los cambios:\n\n1. Ejecuta `git status` para ver qué archivos fueron modificados/creados\n2. Si hay cambios sin commitear:\n   a. Agrega SOLO los archivos relevantes a esta tarea (no usar git add -A ni git add .)\n   b. Escribe un mensaje de commit en Ingles, simple y descriptivo\n   c. El mensaje debe describir QUÉ se hizo, no CÓMO\n   d. Formato: sin prefijos tipo \"feat:\" o \"fix:\" — solo la descripción directa\n   e. Ejecuta el commit\n\nEjemplos de buenos mensajes:\n- \"Agregar steering de continuidad y lecciones aprendidas\"\n- \"Crear hook de code review automático post-tarea\"\n- \"Corregir validación de email en formulario de registro\"\n- \"Implementar paginación en endpoint de usuarios\"\n\nReglas:\n- Nunca hacer push (solo commit local)\n- Nunca commitear archivos .env o secrets\n- Si no hay cambios pendientes, no hacer nada\n- Un commit por tarea completada"
       }
     }
   ]

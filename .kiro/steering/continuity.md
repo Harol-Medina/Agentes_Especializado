@@ -35,12 +35,12 @@ Contexto persistente entre sesiones. Este archivo se actualiza conforme el proye
 | 2026-07-21 | Dark-first design system basado en Figma Make | Consistencia visual con prototipo |
 | 2026-07-21 | Variables de entorno centralizadas en `.data/` | Un solo punto de configuración para Docker |
 | 2026-07-21 | Código de app siempre en `apps/`, infra en raíz | Separación clara de responsabilidades |
-| 2026-07-21 | Commits en español | Preferencia del equipo |
+| 2026-07-21 | Commits en Ingles | Preferencia del equipo |
 | 2026-07-21 | Code review automático post-tarea via hooks | Calidad continua sin fricción |
 
 ## Convenciones Establecidas
 
-- Commits: mensaje simple en español, descriptivo del cambio
+- Commits: mensaje simple en Ingles, descriptivo del cambio
 - Branches: una por feature, nunca push directo a main
 - PRs: pequeños y enfocados
 - Lecciones aprendidas se registran en `.kiro/steering/lessons-learned.md`
