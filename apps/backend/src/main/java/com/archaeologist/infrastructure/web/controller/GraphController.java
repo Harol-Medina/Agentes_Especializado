@@ -64,7 +64,7 @@ public class GraphController {
         }
 
         return analyzerClient.getGraph(projectId, module, edgeType, depth)
-            .map(graphData -> ResponseEntity.ok((Object) graphData))
+            .<ResponseEntity<?>>map(graphData -> ResponseEntity.ok(graphData))
             .onErrorResume(AnalyzerClient.AnalyzerClientException.class, ex -> {
                 if (ex.getErrorType() == AnalyzerClient.ErrorType.NOT_FOUND) {
                     return Mono.just(ResponseEntity
