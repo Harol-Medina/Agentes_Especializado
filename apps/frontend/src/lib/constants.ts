@@ -1,5 +1,9 @@
-/** Base URL for backend API calls — injected via NEXT_PUBLIC_API_URL env var */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+/**
+ * Base URL for backend API calls.
+ * Always uses the relative /api path so requests are proxied through
+ * Next.js rewrites (avoiding CORS issues in production).
+ */
+export const API_BASE_URL = "/api";
 
 /** Polling interval for analysis job status (ms) */
 export const POLLING_INTERVAL_MS = 5_000;
