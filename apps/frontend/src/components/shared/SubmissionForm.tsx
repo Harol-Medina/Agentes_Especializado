@@ -7,9 +7,16 @@ import { cn } from "@/lib/utils";
 const GITHUB_URL_REGEX =
   /^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\/?$/;
 
-type FormState = "idle" | "loading" | "error" | "busy";
+type FormState = "idle" | "loading" | "error" | "busy" | "success";
 
-export function SubmissionForm() {
+interface SubmissionFormProps {
+  /** If true, navigates to analysis page after submission */
+  redirect?: boolean;
+  /** Called when a job is successfully submitted */
+  onJobSubmitted?: (jobId: string) => void;
+}
+
+export function SubmissionForm({ redirect = true, onJobSubmitted }: SubmissionFormProps) {
   const router = useRouter();
   const [repoUrl, setRepoUrl] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
@@ -37,7 +44,16 @@ export function SubmissionForm() {
 
       if (response.status === 202) {
         const data = await response.json();
-        router.push(`/analysis/${data.jobId}`);
+        setFormState("success");
+        setRepoUrl("");
+        onJobSubmitted?.(data.jobId);
+
+        if (redirect) {
+          router.push(`/analysis/${data.jobId}`);
+        }
+
+        // Reset to idle after brief success state
+        setTimeout(() => setFormState("idle"), 2000);
         return;
       }
 
@@ -114,6 +130,13 @@ export function SubmissionForm() {
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary mr-1.5 animate-pulse-slow align-middle" />
           )}
           {errorMessage}
+        </p>
+      )}
+
+      {/* Success feedback */}
+      {formState === "success" && (
+        <p className="text-xs font-body text-[#10B981]">
+          ✓ Análisis iniciado correctamente
         </p>
       )}
 

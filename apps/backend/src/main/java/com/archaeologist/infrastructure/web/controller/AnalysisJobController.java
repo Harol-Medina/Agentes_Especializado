@@ -148,6 +148,39 @@ public class AnalysisJobController {
     }
 
     /**
+     * GET /api/v1/jobs — returns all jobs in the store (most recent first).
+     */
+    @GetMapping
+    public ResponseEntity<?> listJobs() {
+        List<Map<String, Object>> result = jobStore.values().stream()
+            .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
+            .map(job -> {
+                List<AgentProgressItem> agents = buildAgentProgressList(job);
+                int completedAgents = (int) agents.stream()
+                    .filter(a -> "completed".equals(a.status()))
+                    .count();
+
+                Map<String, Object> entry = new java.util.LinkedHashMap<>();
+                entry.put("jobId", job.id().toString());
+                entry.put("repoUrl", job.repoUrl());
+                entry.put("status", job.status().name().toLowerCase());
+                entry.put("currentAgent", job.currentAgent());
+                entry.put("progress", Map.of(
+                    "totalAgents", agents.size(),
+                    "completedAgents", completedAgents,
+                    "agents", agents.stream()
+                        .map(a -> Map.of("name", a.name(), "status", a.status()))
+                        .toList()
+                ));
+                entry.put("createdAt", job.createdAt() != null ? job.createdAt().toString() : null);
+                return entry;
+            })
+            .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * GET /api/v1/jobs/{jobId} — returns current job status with agent progress.
      */
     @GetMapping("/{jobId}")

@@ -18,6 +18,36 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 @router.get(
+    "",
+    summary="List all analysis jobs",
+)
+async def list_jobs() -> list[dict]:
+    """Return all jobs in the in-memory store (most recent first)."""
+    result = []
+    for job in sorted(jobs.values(), key=lambda j: j.created_at, reverse=True):
+        agents_list = []
+        completed_count = 0
+        for r in job.agent_results:
+            agents_list.append({"name": r.agent_name, "status": r.status.value})
+            if r.status == AgentStatus.COMPLETED:
+                completed_count += 1
+
+        result.append({
+            "jobId": str(job.id),
+            "repoUrl": job.repo_url,
+            "status": job.status.value,
+            "currentAgent": job.current_agent,
+            "progress": {
+                "totalAgents": 7,
+                "completedAgents": completed_count,
+                "agents": agents_list,
+            },
+            "createdAt": job.created_at.isoformat() if job.created_at else None,
+        })
+    return result
+
+
+@router.get(
     "/{job_id}",
     response_model=JobStatusResponse,
     summary="Get analysis job status",
