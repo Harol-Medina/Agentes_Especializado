@@ -154,13 +154,34 @@ public class AnalysisJobController {
     public Mono<ResponseEntity<?>> getJobStatus(@PathVariable UUID jobId) {
         AnalysisJob job = jobStore.get(jobId);
 
-        if (job == null) {
-            return Mono.just(ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("JOB_NOT_FOUND", "Analysis job not found")));
+        if (job != null) {
+            return Mono.just(buildJobStatusResponse(job));
         }
 
-        // Build agent progress list with default pipeline agents
+        // Job not in local store — check the analyzer (handles backend restart)
+        return analyzerClient.getJobStatus(jobId)
+            .<ResponseEntity<?>>map(analyzerStatus -> {
+                // Reconstruct local job from analyzer response
+                JobStatus status = mapAnalyzerStatus(analyzerStatus.status());
+                AnalysisJob reconstructed = new AnalysisJob(
+                    jobId,
+                    "",
+                    status,
+                    analyzerStatus.currentAgent(),
+                    java.time.LocalDateTime.now(),
+                    java.time.LocalDateTime.now(),
+                    status == JobStatus.COMPLETED ? java.time.LocalDateTime.now() : null,
+                    null
+                );
+                jobStore.put(jobId, reconstructed);
+                return buildJobStatusResponse(reconstructed);
+            })
+            .onErrorResume(ex -> Mono.just(ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("JOB_NOT_FOUND", "Analysis job not found"))));
+    }
+
+    private ResponseEntity<?> buildJobStatusResponse(AnalysisJob job) {
         List<AgentProgressItem> agents = buildAgentProgressList(job);
         int completedAgents = (int) agents.stream()
             .filter(a -> "completed".equals(a.status()))
@@ -178,7 +199,19 @@ public class AnalysisJobController {
             job.createdAt()
         );
 
-        return Mono.just(ResponseEntity.ok(response));
+        return ResponseEntity.ok(response);
+    }
+
+    private JobStatus mapAnalyzerStatus(String status) {
+        if (status == null) return JobStatus.PENDING;
+        return switch (status.toLowerCase()) {
+            case "completed" -> JobStatus.COMPLETED;
+            case "failed" -> JobStatus.FAILED;
+            case "cancelled" -> JobStatus.CANCELLED;
+            case "analyzing" -> JobStatus.ANALYZING;
+            case "cloning" -> JobStatus.CLONING;
+            default -> JobStatus.PENDING;
+        };
     }
 
     /**

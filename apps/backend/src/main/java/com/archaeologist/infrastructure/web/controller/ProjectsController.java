@@ -108,9 +108,9 @@ public class ProjectsController {
         AnalysisJob job = jobStore.get(projectId);
 
         if (job == null) {
-            return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("PROJECT_NOT_FOUND", "Project not found"));
+            // Don't immediately 404 — the analyzer might have it (backend restart scenario).
+            // Let the request go through to the analyzer; it will 404 if truly not found.
+            return null;
         }
 
         if (job.status() == JobStatus.PENDING) {
