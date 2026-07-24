@@ -287,6 +287,122 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     - List exact model IDs required: `anthropic.claude-3-sonnet-20240229-v1:0`, `amazon.titan-embed-text-v2:0`
     - _Requirements: 14.2_
 
+- [x] 17. Production Deployment (First Deploy)
+  - [x] 17.1 Deploy database to Amazon RDS
+    - Create RDS PostgreSQL 15 instance (db.t3.medium, single-AZ for MVP)
+    - Enable pgvector extension via custom parameter group
+    - Configure security group: inbound port 5432 from EB instances only
+    - Run Flyway migrations against production DB (from Backend container)
+    - Update `.data/.env.prod` with RDS endpoint, username, password
+    - _Requirements: 11.4_
+
+  - [x] 17.2 Deploy Backend to Elastic Beanstalk
+    - Create EB application `archaeologist-backend`
+    - Create environment with Docker platform, single instance (t3.small)
+    - Upload `docker/backend/Dockerfile` + `apps/backend/` as source bundle
+    - Configure all environment variables from `.data/.env.prod`
+    - Verify: `GET /actuator/health` returns 200
+    - _Requirements: 11.1_
+
+  - [x] 17.3 Deploy Analyzer to Elastic Beanstalk
+    - Create EB application `archaeologist-analyzer`
+    - Create environment with Docker platform, single instance (t3.medium — needs RAM for tree-sitter)
+    - Upload `docker/analyzer/Dockerfile` + `apps/analyzer/` as source bundle
+    - Configure environment variables (RDS URL, Bedrock credentials, S3 buckets, webhook URL pointing to Backend EB)
+    - Verify: `GET /health` returns 200
+    - _Requirements: 11.1_
+
+  - [x] 17.4 Deploy Frontend to AWS Amplify
+    - Connect Git repository (GitHub or GitLab) to Amplify
+    - Configure build settings: `cd apps/frontend && npm ci && npm run build`
+    - Set environment variable `NEXT_PUBLIC_API_URL` to Backend EB URL (e.g., `https://archaeologist-backend.us-east-1.elasticbeanstalk.com`)
+    - Verify: pages render, submission form calls Backend correctly
+    - _Requirements: 11.1_
+
+  - [x] 17.5 End-to-end production smoke test
+    - Submit a small public GitHub repo URL through the deployed Frontend
+    - Verify full flow: submission → progress updates → graph renders → chat responds → report displays → Kiro spec downloads
+    - Verify S3: repos bucket receives cloned data, reports bucket receives generated artifacts
+    - Verify Bedrock: agent pipeline invokes models successfully
+    - Document any production-specific issues found
+    - _Requirements: 11.5, 12.1, 12.2, 12.3, 12.4_
+
+- [ ] 18. Documentation
+  - [ ] 18.1 Create apps/backend/README.md
+    - Purpose: API gateway, job orchestration, sequential queue, DB reads for Frontend
+    - Tech stack: Java 21, Spring Boot 3.x, Gradle, WebFlux, JPA, Flyway
+    - Project structure: Clean Architecture (domain → application → infrastructure)
+    - Endpoints: list all REST endpoints with method, path, description
+    - Environment variables: table of all env vars consumed with description
+    - Local development: `./gradlew bootRun` (or rely on Docker)
+    - Testing: `./gradlew test` — JUnit 5
+    - Troubleshooting: Flyway migration conflicts, WebClient timeouts, healthcheck failures
+
+  - [ ] 18.2 Create apps/frontend/README.md
+    - Purpose: Web UI for repo submission, progress, graph, chat, report, export
+    - Tech stack: Next.js 14+ (App Router), React 18, TypeScript, Tailwind CSS, shadcn/ui, React Flow
+    - Project structure: feature-based App Router layout
+    - Key components: SubmissionForm, DependencyGraph, ChatInterface, ArchitectureReport, KiroExport, PipelineProgress
+    - Design system: reference to `.kiro/steering/design-system.md` tokens
+    - Environment variables: `NEXT_PUBLIC_API_URL`
+    - Local development: `npm run dev` (or rely on Docker)
+    - Troubleshooting: SSE connection drops through proxy, React Flow performance with large graphs
+
+  - [ ] 18.3 Create apps/analyzer/README.md
+    - Purpose: AI analysis engine — cloning, parsing, graph construction, embeddings, agent pipeline, RAG
+    - Tech stack: Python 3.11+, FastAPI, Tree-sitter, asyncpg, pgvector, boto3 (Bedrock)
+    - Project structure: Hexagonal (ports & adapters) with modular agents
+    - Agent pipeline: diagram showing 7 agents in sequence with data flow
+    - Endpoints: POST /analyze, GET /jobs/{id}, POST /query (SSE), GET /graph/{id}
+    - Environment variables: table of all env vars
+    - Local development: `uvicorn src.main:app --reload` (or rely on Docker)
+    - Troubleshooting: Bedrock throttling (429 + backoff), Tree-sitter grammar not found, large repo timeout
+
+  - [ ] 18.4 Create apps/AWS/README.md — Full reproduction guide
+    - Title: "AWS Setup — Step by Step Reproduction Guide"
+    - Prerequisites: AWS account, AWS CLI installed + configured, Docker
+    - Step 1: IAM user creation (commands from `iam/setup.sh` with explanation)
+    - Step 2: S3 buckets + lifecycle (commands from `s3/create-buckets.sh`)
+    - Step 3: Bedrock model access (console steps + verification command)
+    - Step 4: RDS PostgreSQL creation (CLI commands + pgvector setup)
+    - Step 5: Elastic Beanstalk environments (Backend + Analyzer)
+    - Step 6: Amplify Frontend connection
+    - Step 7: Environment variable mapping (`.data/.env.prod` field by field)
+    - Step 8: Verification checklist (each service responds, pipeline completes)
+    - Troubleshooting: common IAM permission errors, RDS connectivity, Bedrock "model not enabled"
+
+  - [ ] 18.5 Update root README.md
+    - Project name + tagline: "Software Archaeologist — Understand any codebase in minutes"
+    - Architecture diagram (ASCII from design.md)
+    - Feature list: repo analysis, dependency graph, RAG chat, architecture report, Kiro spec export
+    - Tech stack table (Frontend / Backend / Analyzer / DB / AI)
+    - Quick start: 3 lines — `git clone`, `docker compose build`, `docker compose up` → open http://localhost
+    - "Developed with Kiro" section:
+      - Specs: structured dev from requirements → design → tasks (2 specs: MVP + v2)
+      - Steering: project structure, design system, coding standards as auto-included rules
+      - Agents: specialized sub-agents for code review, architecture, frontend
+      - Hooks: verification loops, lint on save
+      - MCP: AWS documentation + API MCPs for infrastructure automation
+      - Iterative design review: caught 17 contradictions/edge cases before writing code
+    - Link to deployed app
+    - Link to demo video
+    - Screenshots (placeholder paths for now)
+    - License: MIT
+
+  - [ ] 18.6 Create docs/deployment-runbook.md
+    - Current state: manual deployment steps (what was done for first deploy)
+    - Future CI/CD design: push to main → build images → push ECR → deploy EB + Amplify
+    - Rollback: EB environment swap or version revert
+    - Environment differences: table comparing `.env.dev` vs `.env.prod` (which values change)
+    - Cost estimate: monthly AWS costs for MVP single-instance setup
+
+- [ ] 19. MVP Final Delivery Checkpoint
+  - App deployed and accessible at production URL
+  - All 4 app READMEs complete and accurate
+  - Root README renders correctly on GitHub/GitLab with architecture diagram
+  - AWS guide is reproducible (could clone + follow steps on a new account)
+  - Deployment runbook documents current + future process
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -320,7 +436,12 @@ Implementación del MVP completo de Software Archaeologist siguiendo vertical sl
     { "id": 10, "tasks": ["11.1", "12.1"] },
     { "id": 11, "tasks": ["11.2", "13.1", "13.2"] },
     { "id": 12, "tasks": ["14.1"] },
-    { "id": 13, "tasks": ["14.2"] }
+    { "id": 13, "tasks": ["14.2"] },
+    { "id": 14, "tasks": ["17.1"] },
+    { "id": 15, "tasks": ["17.2", "17.3", "17.4"] },
+    { "id": 16, "tasks": ["17.5", "18.1", "18.2", "18.3", "18.4"] },
+    { "id": 17, "tasks": ["18.5", "18.6"] },
+    { "id": 18, "tasks": ["19"] }
   ]
 }
 ```

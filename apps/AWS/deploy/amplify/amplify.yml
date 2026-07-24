@@ -1,0 +1,37 @@
+# =============================================================================
+# Software Archaeologist — Amplify Build Specification
+#
+# Build spec for the Next.js 14+ frontend in a monorepo layout.
+# The frontend lives at apps/frontend/ within the repository root.
+#
+# Amplify uses this file to know how to install dependencies, build the app,
+# and where to find the output artifacts.
+#
+# Reference: https://docs.aws.amazon.com/amplify/latest/userguide/build-settings.html
+# =============================================================================
+
+version: 1
+
+applications:
+  - appRoot: apps/frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # Install dependencies with clean install for reproducible builds
+            - npm ci
+        build:
+          commands:
+            # Build the Next.js application (standalone output mode)
+            - npm run build
+      artifacts:
+        # Next.js standalone output directory
+        baseDirectory: .next
+        files:
+          - "**/*"
+      cache:
+        paths:
+          # Cache node_modules to speed up subsequent builds
+          - node_modules/**/*
+          # Cache Next.js build cache for faster incremental builds
+          - .next/cache/**/*
