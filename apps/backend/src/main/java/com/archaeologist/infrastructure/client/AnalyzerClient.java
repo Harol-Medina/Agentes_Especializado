@@ -152,7 +152,57 @@ public class AnalyzerClient {
                 .onErrorMap(this::wrapError);
     }
 
-    // --- Error Handling ---
+    /**
+     * Retrieves the consolidated analysis report for a project.
+     *
+     * @param projectId the project/job UUID
+     * @return Mono with the report as a generic Map
+     * @throws AnalyzerClientException on communication or HTTP errors
+     */
+    public Mono<Map> getReport(UUID projectId) {
+        return webClient.get()
+                .uri("/report/{projectId}", projectId.toString())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> mapError(response.statusCode()))
+                .bodyToMono(Map.class)
+                .timeout(restTimeout)
+                .onErrorMap(this::wrapError);
+    }
+
+    /**
+     * Retrieves the Kiro specification for a project as JSON.
+     *
+     * @param projectId the project/job UUID
+     * @return Mono with the kiro-spec response as a generic Map
+     * @throws AnalyzerClientException on communication or HTTP errors
+     */
+    public Mono<Map> getKiroSpec(UUID projectId) {
+        return webClient.get()
+                .uri("/kiro-spec/{projectId}", projectId.toString())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> mapError(response.statusCode()))
+                .bodyToMono(Map.class)
+                .timeout(restTimeout)
+                .onErrorMap(this::wrapError);
+    }
+
+    /**
+     * Retrieves the Kiro specification as raw markdown text.
+     *
+     * @param projectId the project/job UUID
+     * @return Mono with the kiro-spec as plain markdown string
+     * @throws AnalyzerClientException on communication or HTTP errors
+     */
+    public Mono<String> getKiroSpecMarkdown(UUID projectId) {
+        return webClient.get()
+                .uri("/kiro-spec/{projectId}", projectId.toString())
+                .accept(MediaType.valueOf("text/markdown"))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> mapError(response.statusCode()))
+                .bodyToMono(String.class)
+                .timeout(restTimeout)
+                .onErrorMap(this::wrapError);
+    }
 
     private Mono<Throwable> mapError(HttpStatusCode statusCode) {
         int code = statusCode.value();

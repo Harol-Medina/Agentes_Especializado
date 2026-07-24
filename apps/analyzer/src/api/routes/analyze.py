@@ -75,6 +75,12 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
         job.current_agent = None
         job.agent_results = context.agent_results
         job.project = context.project_model
+        job.architecture_report = context.architecture_report
+        job.quality_report = context.quality_report
+        job.security_report = context.security_report
+        job.documentation_bundle = context.documentation_bundle
+        job.modernization_plan = context.modernization_plan
+        job.kiro_spec = context.kiro_spec
 
         logger.info("Pipeline completed — job_id=%s", job.id)
 

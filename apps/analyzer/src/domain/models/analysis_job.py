@@ -35,3 +35,10 @@ class AnalysisJob:
     project: Optional[ProjectModel] = None
     created_at: datetime = field(default_factory=datetime.now)
     error_message: Optional[str] = None
+    # Report data from pipeline agents
+    architecture_report: Optional[dict] = None
+    quality_report: Optional[dict] = None
+    security_report: Optional[dict] = None
+    documentation_bundle: Optional[dict] = None
+    modernization_plan: Optional[dict] = None
+    kiro_spec: Optional[str] = None

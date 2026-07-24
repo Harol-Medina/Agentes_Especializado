@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import analyze, graph, jobs, query
+from src.api.routes import analyze, graph, jobs, query, report, kiro_spec
 from src.api.schemas import HealthResponse
 from src.config import get_settings
 
@@ -82,6 +82,8 @@ app.include_router(analyze.router)
 app.include_router(jobs.router)
 app.include_router(query.router)
 app.include_router(graph.router)
+app.include_router(report.router)
+app.include_router(kiro_spec.router)
 
 
 # ---------------------------------------------------------------------------
