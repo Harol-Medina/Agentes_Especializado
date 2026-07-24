@@ -783,6 +783,73 @@
         "chatSessionId": "sess_e34b3187-3bac-4fdc-8fe7-8600df3ea7a1",
         "timestamp": 1784750779684
       }
+    ],
+    "17.1 Deploy database to Amazon RDS": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916691434
+      },
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916901769
+      }
+    ],
+    "17.2 Deploy Backend to Elastic Beanstalk": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916692303
+      },
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916902488
+      }
+    ],
+    "17.3 Deploy Analyzer to Elastic Beanstalk": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916693130
+      },
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916903469
+      }
+    ],
+    "17.4 Deploy Frontend to AWS Amplify": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916694042
+      },
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916904247
+      }
+    ],
+    "17.5 End-to-end production smoke test": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916695203
+      },
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916905086
+      }
+    ],
+    "17. Production Deployment (First Deploy)": [
+      {
+        "executionId": "cc486ced-a486-4958-b555-28539213ec54",
+        "chatSessionId": "sess_07ed9ce2-9299-4d5b-b445-9abb8ff13d02",
+        "timestamp": 1784916905126
+      }
     ]
   }
 }

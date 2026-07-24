@@ -195,3 +195,38 @@ Software Archaeologist es una plataforma de análisis inteligente de repositorio
 7. THE Platform SHALL document all IAM setup commands in `apps/AWS/iam/` with inline comments explaining the purpose of each permission
 8. THE S3 bucket for temporary repos (`archaeologist-repos-prod`) SHALL have a lifecycle policy that deletes objects after 24 hours
 9. THE Platform SHALL provide a verification command (`iam simulate-principal-policy`) to confirm the user cannot perform destructive or out-of-scope actions
+
+### Requirement 15: Production Deployment
+
+**User Story:** As a platform operator, I want the application deployed to AWS and accessible publicly, so that users can analyze repositories without running Docker locally.
+
+#### Acceptance Criteria
+
+1. THE Frontend SHALL be deployed to AWS Amplify with auto-deploy from the Git repository
+2. THE Backend and Analyzer SHALL be deployed to Elastic Beanstalk using Docker platform (single instance)
+3. THE Database SHALL be hosted on Amazon RDS PostgreSQL 15 with pgvector extension enabled
+4. THE Platform SHALL use S3 buckets for temporary repo storage (lifecycle 24h) and persistent report/spec storage
+5. THE deployment SHALL be verified with an end-to-end smoke test: submit repo → complete analysis → view results
+
+### Requirement 16: Application Documentation
+
+**User Story:** As a developer joining the project, I want comprehensive per-app documentation, so that I can understand, run, and contribute to any service without external help.
+
+#### Acceptance Criteria
+
+1. Each app (`apps/backend/`, `apps/frontend/`, `apps/analyzer/`, `apps/AWS/`) SHALL have a `README.md` with: purpose, tech stack, project structure, endpoints/commands, environment variables, local development, testing, and troubleshooting
+2. `apps/AWS/README.md` SHALL be a step-by-step reproduction guide sufficient for a new developer to replicate the entire AWS setup from scratch
+3. THE root `README.md` SHALL describe what the app does, include an architecture diagram, quick start instructions (`docker compose build` + `up`), feature list, and tech stack
+4. THE root `README.md` SHALL include a "Developed with Kiro" section documenting how Specs, Steering, Agents, Hooks, and MCP were used during development
+5. THE Platform SHALL include a `docs/deployment-runbook.md` with manual deployment steps, future CI/CD design, rollback procedure, and environment differences
+
+### Requirement 17: Deployment Reproducibility
+
+**User Story:** As a platform operator, I want a documented deployment process that anyone on the team can execute, so that deployments are not dependent on tribal knowledge.
+
+#### Acceptance Criteria
+
+1. THE `docs/deployment-runbook.md` SHALL document the complete deployment flow from local → production
+2. THE runbook SHALL specify which environment variables differ between `.env.dev` and `.env.prod`
+3. THE runbook SHALL include a rollback procedure for each AWS service (EB version rollback, Amplify redeploy)
+4. THE runbook SHALL describe the target CI/CD pipeline design (push to main → ECR → EB) for future automation
