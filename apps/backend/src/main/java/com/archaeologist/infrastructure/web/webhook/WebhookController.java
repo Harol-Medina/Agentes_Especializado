@@ -113,6 +113,7 @@ public class WebhookController {
         return switch (status.toLowerCase()) {
             case "completed" -> JobStatus.COMPLETED;
             case "failed" -> JobStatus.FAILED;
+            case "cancelled" -> JobStatus.CANCELLED;
             default -> JobStatus.ANALYZING;
         };
     }

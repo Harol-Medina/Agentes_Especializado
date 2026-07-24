@@ -204,6 +204,23 @@ public class AnalyzerClient {
                 .onErrorMap(this::wrapError);
     }
 
+    /**
+     * Requests cancellation of a running analysis job.
+     *
+     * @param jobId the job UUID to cancel
+     * @return Mono with the cancellation response
+     * @throws AnalyzerClientException on communication or HTTP errors
+     */
+    public Mono<Map> cancelJob(UUID jobId) {
+        return webClient.post()
+                .uri("/jobs/{jobId}/cancel", jobId.toString())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> mapError(response.statusCode()))
+                .bodyToMono(Map.class)
+                .timeout(restTimeout)
+                .onErrorMap(this::wrapError);
+    }
+
     private Mono<Throwable> mapError(HttpStatusCode statusCode) {
         int code = statusCode.value();
         if (code == 400) {

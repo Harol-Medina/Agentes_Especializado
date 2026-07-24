@@ -58,6 +58,24 @@ class AgentPipeline:
         """
         self._agents = sorted(agents, key=lambda a: a.execution_order)
         self._webhook = webhook_adapter
+        self._on_agent_complete = None
+        self._cancel_check = None
+
+    def set_on_agent_complete(self, callback) -> None:
+        """Set a callback invoked after each agent completes.
+
+        The callback receives (agent_name: str, context: PipelineContext).
+        Used to update the job store incrementally for progressive results.
+        """
+        self._on_agent_complete = callback
+
+    def set_cancel_check(self, check_fn) -> None:
+        """Set a function that returns True if the pipeline should stop.
+
+        Checked before each agent execution. The function takes no arguments
+        and returns a boolean.
+        """
+        self._cancel_check = check_fn
 
     async def execute(self, job_id: UUID, repo_url: str) -> PipelineContext:
         """Execute the full agent pipeline.
@@ -79,6 +97,35 @@ class AgentPipeline:
         )
 
         for agent in self._agents:
+            # --- Cancellation check ---
+            if self._cancel_check is not None and self._cancel_check():
+                logger.info(
+                    "Pipeline cancelled before agent=%s, job_id=%s",
+                    agent.name,
+                    job_id,
+                )
+                # Mark remaining agents as SKIPPED
+                for remaining_agent in self._agents:
+                    if remaining_agent.execution_order >= agent.execution_order:
+                        already_recorded = any(
+                            r.agent_name == remaining_agent.name
+                            for r in context.agent_results
+                        )
+                        if not already_recorded:
+                            skip_result = AgentResult(
+                                agent_name=remaining_agent.name,
+                                status=AgentStatus.SKIPPED,
+                                execution_order=remaining_agent.execution_order,
+                            )
+                            context.agent_results.append(skip_result)
+
+                job_status = JobStatus.FAILED  # Will be overridden to CANCELLED by caller
+                await self._notify_webhook(context, job_status)
+                raise PipelineTerminatedError(
+                    "Pipeline cancelled by user request",
+                    job_id=job_id,
+                )
+
             # --- Pre-execution check ---
             if not agent.can_execute(context):
                 self._mark_skipped(context, agent)
@@ -203,6 +250,17 @@ class AgentPipeline:
             output.agent_name,
             list(output.context_updates.keys()),
         )
+
+        # Notify the callback for progressive results
+        if self._on_agent_complete is not None:
+            try:
+                self._on_agent_complete(output.agent_name, context)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "on_agent_complete callback failed — agent=%s, error=%s",
+                    output.agent_name,
+                    str(exc),
+                )
 
     def _mark_skipped(self, context: PipelineContext, agent: BaseAgent) -> None:
         """Record an agent as SKIPPED (can_execute returned False)."""

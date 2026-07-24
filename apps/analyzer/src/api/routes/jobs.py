@@ -70,3 +70,41 @@ async def get_job_status(job_id: UUID) -> JobStatusResponse:
         progress=progress,
         error_message=job.error_message,
     )
+
+
+@router.post(
+    "/{job_id}/cancel",
+    summary="Cancel a running analysis job",
+    status_code=status.HTTP_200_OK,
+)
+async def cancel_job(job_id: UUID) -> dict:
+    """Request cancellation of a running job.
+
+    Sets the cancel_requested flag on the job. The pipeline checks this
+    flag between agents and will stop gracefully at the next opportunity.
+    """
+    from src.domain.models.analysis_job import JobStatus
+
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job {job_id} not found",
+        )
+
+    # Only cancel jobs that are still running
+    if job.status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED):
+        return {
+            "jobId": str(job_id),
+            "cancelled": False,
+            "message": f"Job is already in terminal state: {job.status.value}",
+        }
+
+    # Set the cancellation flag — pipeline will pick it up between agents
+    job.cancel_requested = True
+
+    return {
+        "jobId": str(job_id),
+        "cancelled": True,
+        "message": "Cancellation requested. The job will stop after the current agent completes.",
+    }

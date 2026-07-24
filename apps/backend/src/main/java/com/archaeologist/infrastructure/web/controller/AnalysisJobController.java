@@ -104,7 +104,21 @@ public class AnalysisJobController {
                 // Dispatch analysis to the Analyzer service (fire-and-forget)
                 String webhookUrl = webhookBaseUrl + "/api/webhooks/analysis-complete";
                 analyzerClient.triggerAnalysis(jobId, request.repoUrl().trim(), webhookUrl)
-                    .doOnSuccess(v -> log.info("Analysis dispatched to Analyzer — job_id={}", jobId))
+                    .doOnSuccess(v -> {
+                        log.info("Analysis dispatched to Analyzer — job_id={}", jobId);
+                        // Update job status to ANALYZING so progressive endpoints work
+                        AnalysisJob analyzingJob = new AnalysisJob(
+                            jobId,
+                            request.repoUrl().trim(),
+                            JobStatus.ANALYZING,
+                            "repository_agent",
+                            now,
+                            LocalDateTime.now(),
+                            null,
+                            null
+                        );
+                        jobStore.put(jobId, analyzingJob);
+                    })
                     .doOnError(err -> {
                         log.error("Failed to dispatch analysis to Analyzer — job_id={}, error={}", jobId, err.getMessage());
                         // Mark job as failed and release the slot
@@ -168,6 +182,74 @@ public class AnalysisJobController {
     }
 
     /**
+     * DELETE /api/v1/jobs/{jobId} — cancel a running analysis job.
+     */
+    @DeleteMapping("/{jobId}")
+    public Mono<ResponseEntity<?>> cancelJob(@PathVariable UUID jobId) {
+        AnalysisJob job = jobStore.get(jobId);
+
+        if (job == null) {
+            return Mono.just(ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("JOB_NOT_FOUND", "Analysis job not found")));
+        }
+
+        // Only cancel jobs that are still running
+        if (job.status() == JobStatus.COMPLETED || job.status() == JobStatus.FAILED
+                || job.status() == JobStatus.CANCELLED) {
+            return Mono.just(ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("JOB_TERMINAL",
+                    "Job is already in terminal state: " + job.status().name().toLowerCase())));
+        }
+
+        // Send cancel request to the analyzer
+        return analyzerClient.cancelJob(jobId)
+            .<ResponseEntity<?>>map(result -> {
+                // Update local job status
+                AnalysisJob cancelledJob = new AnalysisJob(
+                    job.id(),
+                    job.repoUrl(),
+                    JobStatus.CANCELLED,
+                    null,
+                    job.createdAt(),
+                    java.time.LocalDateTime.now(),
+                    null,
+                    "Cancelled by user"
+                );
+                jobStore.put(jobId, cancelledJob);
+
+                // Release the processing slot
+                jobQueueService.release(jobId);
+                log.info("Job {} cancelled and slot released", jobId);
+
+                return ResponseEntity.ok(result);
+            })
+            .onErrorResume(ex -> {
+                // Even if analyzer cancel fails, mark locally as cancelled
+                AnalysisJob cancelledJob = new AnalysisJob(
+                    job.id(),
+                    job.repoUrl(),
+                    JobStatus.CANCELLED,
+                    null,
+                    job.createdAt(),
+                    java.time.LocalDateTime.now(),
+                    null,
+                    "Cancelled by user (analyzer notification failed)"
+                );
+                jobStore.put(jobId, cancelledJob);
+                jobQueueService.release(jobId);
+                log.warn("Job {} cancelled locally but analyzer notification failed: {}", jobId, ex.getMessage());
+
+                return Mono.just(ResponseEntity.ok(java.util.Map.of(
+                    "jobId", jobId.toString(),
+                    "cancelled", true,
+                    "message", "Job cancelled"
+                )));
+            });
+    }
+
+    /**
      * Builds the agent progress list based on current job state.
      * Uses the fixed pipeline order of 7 agents.
      */
@@ -200,6 +282,12 @@ public class AnalysisJobController {
         if (job.status() == JobStatus.FAILED) {
             return pipelineAgents.stream()
                 .map(name -> new AgentProgressItem(name, "failed"))
+                .toList();
+        }
+
+        if (job.status() == JobStatus.CANCELLED) {
+            return pipelineAgents.stream()
+                .map(name -> new AgentProgressItem(name, "cancelled"))
                 .toList();
         }
 

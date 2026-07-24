@@ -5,5 +5,6 @@ public enum JobStatus {
     CLONING,
     ANALYZING,
     COMPLETED,
-    FAILED
+    FAILED,
+    CANCELLED
 }

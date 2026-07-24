@@ -66,6 +66,32 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
     # Create and execute the pipeline
     pipeline = AgentPipeline(agents=agents, webhook_adapter=webhook_adapter)
 
+    # Set up progressive results: update job as each agent completes
+    def _on_agent_done(agent_name: str, context) -> None:
+        """Update the job store incrementally after each agent."""
+        job.current_agent = agent_name
+        job.agent_results = context.agent_results
+        # Persist partial data as it becomes available
+        if context.project_model is not None:
+            job.project = context.project_model
+        if context.architecture_report is not None:
+            job.architecture_report = context.architecture_report
+        if context.quality_report is not None:
+            job.quality_report = context.quality_report
+        if context.security_report is not None:
+            job.security_report = context.security_report
+        if context.documentation_bundle is not None:
+            job.documentation_bundle = context.documentation_bundle
+        if context.modernization_plan is not None:
+            job.modernization_plan = context.modernization_plan
+        if context.kiro_spec is not None:
+            job.kiro_spec = context.kiro_spec
+
+    pipeline.set_on_agent_complete(_on_agent_done)
+
+    # Set up cancellation check
+    pipeline.set_cancel_check(lambda: job.cancel_requested)
+
     try:
         job.status = JobStatus.ANALYZING
         context = await pipeline.execute(job_id=job.id, repo_url=job.repo_url)
@@ -85,13 +111,18 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
         logger.info("Pipeline completed — job_id=%s", job.id)
 
     except PipelineTerminatedError as exc:
-        job.status = JobStatus.FAILED
-        job.current_agent = None
-        job.error_message = exc.message
-
-        logger.error(
-            "Pipeline terminated — job_id=%s, error=%s", job.id, exc.message
-        )
+        if job.cancel_requested:
+            job.status = JobStatus.CANCELLED
+            job.current_agent = None
+            job.error_message = "Analysis cancelled by user"
+            logger.info("Pipeline cancelled — job_id=%s", job.id)
+        else:
+            job.status = JobStatus.FAILED
+            job.current_agent = None
+            job.error_message = exc.message
+            logger.error(
+                "Pipeline terminated — job_id=%s, error=%s", job.id, exc.message
+            )
 
     except Exception as exc:  # noqa: BLE001
         job.status = JobStatus.FAILED

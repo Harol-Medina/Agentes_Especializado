@@ -1,11 +1,8 @@
 """GET /graph/{job_id} — Serve graph data with optional filters.
 
 Returns the dependency graph (nodes and edges) built during the
-repository analysis phase. Supports filtering by module, edge type,
-and depth.
-
-The job_id parameter accepts the analysis job UUID. The frontend uses
-the jobId as the projectId for graph queries.
+repository analysis phase. Available as soon as the repository_agent
+completes (agent 1), even while other agents are still running.
 """
 
 from __future__ import annotations
@@ -43,8 +40,8 @@ async def get_graph(
 ) -> GraphResponse:
     """Return nodes and edges for *project_id*, optionally filtered.
 
-    Uses the job_id as the project identifier to look up the in-memory
-    graph data built by the RepositoryAgent.
+    Graph data is available as soon as repository_agent completes,
+    even if subsequent agents are still running.
     """
     # Look up the job by ID (frontend sends jobId as projectId)
     job = jobs.get(project_id)
@@ -54,19 +51,19 @@ async def get_graph(
             detail=f"Project {project_id} not found",
         )
 
-    if job.status != JobStatus.COMPLETED:
+    # Only reject if job hasn't started or is still pending
+    if job.status == JobStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Analysis for {project_id} has not completed yet (status: {job.status.value})",
+            detail=f"Analysis for {project_id} has not started yet.",
         )
 
     project = job.project
     if project is None:
-        return GraphResponse(
-            project_id=project_id,
-            nodes=[],
-            edges=[],
-            stats=GraphStats(),
+        # Repository agent hasn't finished yet — graph not available
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Graph is not available yet — repository analysis still in progress.",
         )
 
     # Convert domain models to API schemas
@@ -100,14 +97,12 @@ async def get_graph(
     filtered_edges = edges
 
     if module:
-        # Filter nodes by module/file path containing the module name
         filtered_nodes = [
             n for n in nodes
             if (n.file_path and module.lower() in n.file_path.lower())
             or (n.qualified_name and module.lower() in n.qualified_name.lower())
             or module.lower() in n.name.lower()
         ]
-        # Filter edges to only include those between filtered nodes
         node_ids = {n.id for n in filtered_nodes}
         filtered_edges = [
             e for e in edges

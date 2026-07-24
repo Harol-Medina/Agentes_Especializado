@@ -16,6 +16,7 @@ class JobStatus(str, Enum):
     ANALYZING = "analyzing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 @dataclass
@@ -42,3 +43,5 @@ class AnalysisJob:
     documentation_bundle: Optional[dict] = None
     modernization_plan: Optional[dict] = None
     kiro_spec: Optional[str] = None
+    # Cancellation flag — checked by the pipeline between agents
+    cancel_requested: bool = False

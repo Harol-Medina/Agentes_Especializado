@@ -98,8 +98,10 @@ public class ProjectsController {
     // --- Helpers ---
 
     /**
-     * Verifies the job exists and has completed. Returns a ResponseEntity
-     * error if not, or null if verification passes.
+     * Verifies the job exists. Returns a ResponseEntity
+     * error if not found, or null if verification passes.
+     * Allows in-progress jobs to pass through — the analyzer
+     * will return partial data or 409 if data isn't ready yet.
      */
     private ResponseEntity<?> verifyCompleted(UUID projectId) {
         Map<UUID, AnalysisJob> jobStore = analysisJobController.getJobStore();
@@ -111,11 +113,11 @@ public class ProjectsController {
                 .body(new ErrorResponse("PROJECT_NOT_FOUND", "Project not found"));
         }
 
-        if (job.status() != JobStatus.COMPLETED) {
+        if (job.status() == JobStatus.PENDING) {
             return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("ANALYSIS_NOT_COMPLETE",
-                    "Results are available after analysis completes. Current status: " + job.status().name().toLowerCase()));
+                .body(new ErrorResponse("ANALYSIS_NOT_STARTED",
+                    "Analysis has not started yet."));
         }
 
         return null;

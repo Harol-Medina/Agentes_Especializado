@@ -38,10 +38,11 @@ async def get_kiro_spec(job_id: UUID, request: Request):
         )
 
     if job.status != JobStatus.COMPLETED:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Job {job_id} has not completed yet (status: {job.status.value})",
-        )
+        if job.kiro_spec is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Kiro spec for job {job_id} is not available yet (status: {job.status.value})",
+            )
 
     spec_content = job.kiro_spec or ""
 
