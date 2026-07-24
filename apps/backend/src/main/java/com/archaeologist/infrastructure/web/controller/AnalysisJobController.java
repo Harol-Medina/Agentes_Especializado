@@ -9,6 +9,10 @@ import com.archaeologist.domain.model.AnalysisJob;
 import com.archaeologist.domain.model.JobStatus;
 import com.archaeologist.domain.service.GitHubUrlValidator;
 import com.archaeologist.domain.service.JobQueueService;
+import com.archaeologist.infrastructure.client.AnalyzerClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,15 +28,25 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api/v1/jobs")
 public class AnalysisJobController {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalysisJobController.class);
+
     private final GitHubUrlValidator urlValidator;
     private final JobQueueService jobQueueService;
+    private final AnalyzerClient analyzerClient;
+    private final String webhookBaseUrl;
 
     // In-memory job store (MVP) — full persistence comes in a later task
     private final Map<UUID, AnalysisJob> jobStore = new ConcurrentHashMap<>();
 
-    public AnalysisJobController(GitHubUrlValidator urlValidator, JobQueueService jobQueueService) {
+    public AnalysisJobController(
+            GitHubUrlValidator urlValidator,
+            JobQueueService jobQueueService,
+            AnalyzerClient analyzerClient,
+            @Value("${app.webhook-base-url:http://backend:8080}") String webhookBaseUrl) {
         this.urlValidator = urlValidator;
         this.jobQueueService = jobQueueService;
+        this.analyzerClient = analyzerClient;
+        this.webhookBaseUrl = webhookBaseUrl;
     }
 
     @PostMapping
@@ -86,6 +100,28 @@ public class AnalysisJobController {
                     null
                 );
                 jobStore.put(jobId, job);
+
+                // Dispatch analysis to the Analyzer service (fire-and-forget)
+                String webhookUrl = webhookBaseUrl + "/api/webhooks/analysis-complete";
+                analyzerClient.triggerAnalysis(jobId, request.repoUrl().trim(), webhookUrl)
+                    .doOnSuccess(v -> log.info("Analysis dispatched to Analyzer — job_id={}", jobId))
+                    .doOnError(err -> {
+                        log.error("Failed to dispatch analysis to Analyzer — job_id={}, error={}", jobId, err.getMessage());
+                        // Mark job as failed and release the slot
+                        AnalysisJob failedJob = new AnalysisJob(
+                            jobId,
+                            request.repoUrl().trim(),
+                            JobStatus.FAILED,
+                            null,
+                            now,
+                            LocalDateTime.now(),
+                            null,
+                            "Failed to connect to analyzer service: " + err.getMessage()
+                        );
+                        jobStore.put(jobId, failedJob);
+                        jobQueueService.release(jobId);
+                    })
+                    .subscribe();
 
                 return ResponseEntity
                     .status(HttpStatus.ACCEPTED)

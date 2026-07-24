@@ -26,6 +26,7 @@ spring:
 
 app:
   webhook-secret: ${WEBHOOK_SECRET:shared_webhook_secret}
+  webhook-base-url: ${WEBHOOK_BASE_URL:http://backend:8080}
 
 analyzer:
   base-url: ${ANALYZER_BASE_URL:http://analyzer:8000}

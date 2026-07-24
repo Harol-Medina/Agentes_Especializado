@@ -11,16 +11,17 @@ Contexto persistente entre sesiones. Este archivo se actualiza conforme el proye
 ## Estado Actual del Proyecto
 
 - **Fase**: Configuración inicial de infraestructura agéntica
-- **Última actualización**: 2026-07-21
+- **Última actualización**: 2026-07-23
 
 ## Stack Técnico
 
-- **Backend**: Laravel (PHP) — `apps/backend/`
-- **Frontend**: React + Vite + Tailwind CSS v4 — `apps/frontend/`
-- **Mobile**: Kotlin/Android — `apps/android/`
-- **Infra**: Docker Compose + Nginx + PHP-FPM
-- **DB**: Por definir
-- **AWS**: Lambdas — `apps/AWS/`
+- **Backend**: Java 21 / Spring Boot 3.x — `apps/backend/`
+- **Frontend**: Next.js 14+ / React 18 / TypeScript / Tailwind CSS v4 — `apps/frontend/`
+- **Analyzer**: Python 3.11+ / FastAPI — `apps/analyzer/`
+- **Mobile**: Kotlin / Jetpack Compose — `apps/android/`
+- **Infra**: Docker Compose + Nginx + AWS (Amplify, EB, RDS, Bedrock)
+- **DB**: PostgreSQL 15 + pgvector
+- **AWS**: Lambdas + Bedrock + S3 — `apps/AWS/`
 
 ## Arquitectura de Agentes
 
@@ -49,15 +50,27 @@ Contexto persistente entre sesiones. Este archivo se actualiza conforme el proye
 ## Progreso por Área
 
 ### Infraestructura Agéntica
-- [x] Steering: design-system, continuity, lessons-learned
-- [x] Agent: code-reviewer senior
+
+#### Global (`~/.kiro/`) — aplica a todos los proyectos
+- [x] Steering: coding-standards, verification-loop, token-optimization, continuous-learning, security-baseline
+- [x] Steering: project-structure, agentic-engineering, agency-agents-spec
+- [x] Agent: engineering/code-reviewer, backend-architect, frontend-developer, devops-automator
+- [x] Agent: security/appsec-engineer
+- [x] Agent: testing/test-automation
+
+#### Workspace (`.kiro/`) — específico de Software Archaeologist
+- [x] Steering: design-system, continuity, lessons-learned, project-structure, stack-context, agent-rules
+- [x] Agent: engineering/backend-architect (Java/Spring Boot 3.x específico)
+- [x] Agent: engineering/frontend-developer (Next.js 14 + shadcn específico)
+- [x] Agent: engineering/analyzer-developer (Python/FastAPI + RAG específico)
 - [x] Hooks: code review post-tarea, lecciones aprendidas, commit automático
-- [ ] Agentes restantes (backend-architect, frontend-developer, etc.)
+- [ ] Agentes pendientes: design/ (UI, UX), product/, project-management/
 
 ### Aplicación
-- [ ] Backend Laravel
-- [ ] Frontend React
-- [ ] Mobile Android
+- [ ] Backend Spring Boot
+- [ ] Frontend Next.js
+- [ ] Analyzer FastAPI (parcialmente implementado en apps/analyzer/)
+- [ ] Mobile Kotlin/Android
 - [ ] AWS Lambdas
 
 ---
@@ -66,5 +79,7 @@ Contexto persistente entre sesiones. Este archivo se actualiza conforme el proye
 
 _Actualizar esta sección al final de cada sesión con lo que queda pendiente o decisiones abiertas._
 
-- Pendiente: implementar agentes de las 6 divisiones según spec `agency-agents-spec`
-- Pendiente: definir motor de DB y configurar en docker-compose
+- Completado: Adaptación de ECC repo (rules, skills, patterns) a steering y agents de Kiro
+- Pendiente: agentes de design, product y project-management
+- Pendiente: configurar docker-compose.yml con todos los servicios
+- Pendiente: scaffolding del Backend (Spring Boot) y Frontend (Next.js)

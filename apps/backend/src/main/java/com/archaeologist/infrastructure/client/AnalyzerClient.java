@@ -58,9 +58,9 @@ public class AnalyzerClient {
      */
     public Mono<Void> triggerAnalysis(UUID jobId, String repoUrl, String webhookUrl) {
         Map<String, Object> body = Map.of(
-                "repoUrl", repoUrl,
-                "jobId", jobId.toString(),
-                "webhookUrl", webhookUrl
+                "repo_url", repoUrl,
+                "job_id", jobId.toString(),
+                "webhook_url", webhookUrl
         );
 
         return webClient.post()
