@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/constants";
 
 const GITHUB_URL_REGEX =
   /^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\/?$/;
@@ -29,7 +30,7 @@ export function SubmissionForm() {
     setFormState("loading");
 
     try {
-      const response = await fetch("/api/v1/jobs", {
+      const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repoUrl: repoUrl.trim() }),
