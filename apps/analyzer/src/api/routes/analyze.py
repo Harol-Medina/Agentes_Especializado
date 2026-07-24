@@ -16,8 +16,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, status
 
 from src.adapters.webhook_adapter import WebhookAdapter
+from src.agents.architecture_agent import ArchitectureAgent
+from src.agents.documentation_agent import DocumentationAgent
+from src.agents.kiro_agent import KiroAgent
+from src.agents.modernization_agent import ModernizationAgent
 from src.agents.pipeline import AgentPipeline, PipelineTerminatedError
+from src.agents.quality_agent import QualityAgent
 from src.agents.repository_agent import RepositoryAgent
+from src.agents.security_agent import SecurityAgent
 from src.api.job_store import jobs
 from src.api.schemas import AnalyzeRequest, AnalyzeResponse
 from src.config import get_settings
@@ -40,10 +46,15 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
     job.status = JobStatus.CLONING
     job.current_agent = "repository_agent"
 
-    # Build the list of agents (RepositoryAgent + placeholders for future agents)
+    # Build the list of agents (full pipeline: 7 agents in order)
     agents = [
         RepositoryAgent(),
-        # TODO (tasks 6.1, 6.2): Add ArchitectureAgent, QualityAgent, etc.
+        ArchitectureAgent(),
+        QualityAgent(),
+        SecurityAgent(),
+        DocumentationAgent(),
+        ModernizationAgent(),
+        KiroAgent(),
     ]
 
     # Create webhook adapter for notifications

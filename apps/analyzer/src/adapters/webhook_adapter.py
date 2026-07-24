@@ -46,7 +46,7 @@ class WebhookAdapter:
         Uses hmac.new(key, msg, digestmod) from the standard library.
         The signature is sent as ``sha256={hex_digest}`` in X-Webhook-Signature.
         """
-        return hmac.new(
+        return hmac.HMAC(
             key=self._webhook_secret.encode("utf-8"),
             msg=payload_bytes,
             digestmod=hashlib.sha256,

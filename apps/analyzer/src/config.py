@@ -7,6 +7,7 @@ it at container startup via ``env_file: .data/.env``.
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,8 +36,14 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
 
     # ----------------------------------------------------------------- Bedrock
-    bedrock_claude_model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0"
-    bedrock_titan_model_id: str = "amazon.titan-embed-text-v2:0"
+    bedrock_claude_model_id: str = Field(
+        default="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        validation_alias="bedrock_model_id",
+    )
+    bedrock_titan_model_id: str = Field(
+        default="amazon.titan-embed-text-v2:0",
+        validation_alias="bedrock_embedding_model_id",
+    )
 
     # ----------------------------------------------------------------- limits
     max_repo_size_bytes: int = 524_288_000  # 500 MB
