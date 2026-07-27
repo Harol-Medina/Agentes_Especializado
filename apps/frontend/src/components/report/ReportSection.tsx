@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
       />
       <span
         className={cn(
-          "font-mono text-[10px] uppercase tracking-[0.08em]",
+          "font-code text-[10px] uppercase tracking-[0.08em]",
           config.color
         )}
       >
@@ -78,7 +78,7 @@ export function ReportSection({
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-[20px] font-bold text-foreground">
+        <h3 className="font-heading text-[20px] font-bold text-foreground">
           {title}
         </h3>
         {status && <StatusBadge status={status} />}

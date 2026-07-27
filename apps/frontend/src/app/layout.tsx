@@ -3,27 +3,29 @@ import { Roboto_Slab, Inter, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 
 // ─────────────────────────────────────────────
-// Google Fonts — loaded via next/font for optimal performance
+// Google Fonts
+// The `variable` names here inject CSS custom properties
+// on <html>, which our @theme then references via fallback.
 // ─────────────────────────────────────────────
 
 const robotoSlab = Roboto_Slab({
   subsets: ["latin"],
   weight: ["300", "400", "600", "700"],
-  variable: "--font-display",
+  variable: "--font-heading",
   display: "swap",
 });
 
 const inter = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-body",
+  variable: "--font-sans",
   display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
-  variable: "--font-mono",
+  variable: "--font-code",
   display: "swap",
 });
 
@@ -56,7 +58,7 @@ export default function RootLayout({
       className={`${robotoSlab.variable} ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground font-body antialiased min-h-screen">
+      <body className="bg-background text-foreground font-sans antialiased min-h-screen">
         {children}
       </body>
     </html>

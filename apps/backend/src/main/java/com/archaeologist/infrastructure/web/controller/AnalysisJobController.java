@@ -35,7 +35,9 @@ public class AnalysisJobController {
     private final AnalyzerClient analyzerClient;
     private final String webhookBaseUrl;
 
-    // In-memory job store (MVP) — full persistence comes in a later task
+    // TODO: Replace ConcurrentHashMap with JPA persistence (AnalysisJobRepository)
+    // when moving beyond MVP. Current in-memory store loses all jobs on restart.
+    // Migration path: inject AnalysisJobRepository, convert AnalysisJob ↔ AnalysisJobEntity.
     private final Map<UUID, AnalysisJob> jobStore = new ConcurrentHashMap<>();
 
     public AnalysisJobController(

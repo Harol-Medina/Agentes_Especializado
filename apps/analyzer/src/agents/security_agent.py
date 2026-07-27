@@ -12,6 +12,7 @@ from typing import Optional
 
 from src.adapters.bedrock_adapter import BedrockAdapter, BedrockInvocationError
 from src.agents.base import AgentOutput, BaseAgent, PipelineContext, AgentExecutionError
+from src.agents.semgrep_scanner import SemgrepScanner
 from src.domain.models.agent_result import AgentStatus
 from src.domain.models.project_model import NodeType
 
@@ -45,11 +46,22 @@ class SecurityAgent(BaseAgent):
         return context.project_model is not None
 
     async def execute(self, context: PipelineContext) -> AgentOutput:
-        """List dependencies + file patterns and ask Claude for vulnerability assessment."""
+        """Run Semgrep scan + Claude vulnerability assessment."""
         project = context.project_model
         assert project is not None
 
         try:
+            # Run Semgrep static analysis (if available)
+            semgrep_report: dict = {}
+            if project.repo_path:
+                scanner = SemgrepScanner()
+                scan_result = await scanner.scan(
+                    repo_path=str(project.repo_path),
+                    language=project.language or "java",
+                )
+                semgrep_report = scan_result.to_dict()
+
+            # Claude-based vulnerability assessment
             security_context = self._build_security_context(context)
             system_prompt = self._build_system_prompt()
             user_prompt = self._build_user_prompt(security_context)
@@ -61,6 +73,10 @@ class SecurityAgent(BaseAgent):
             )
 
             report = self._parse_response(raw_response)
+
+            # Merge Semgrep findings into report
+            if semgrep_report:
+                report["semgrep"] = semgrep_report
 
             return AgentOutput(
                 agent_name=self.name,

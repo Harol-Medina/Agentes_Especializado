@@ -268,7 +268,7 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+          <span className="font-code text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
             Loading graph...
           </span>
         </div>
@@ -280,8 +280,8 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <p className="font-body text-[13px] text-[#EF4444]">{error}</p>
-          <p className="font-mono text-[10px] text-muted-foreground mt-1">
+          <p className="font-sans text-[13px] text-[#EF4444]">{error}</p>
+          <p className="font-code text-[10px] text-muted-foreground mt-1">
             Failed to load dependency graph
           </p>
         </div>
@@ -333,12 +333,12 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
               top: tooltipPos.y + 12,
             }}
           >
-            <p className="font-body text-[13px] font-semibold text-foreground">
+            <p className="font-sans text-[13px] font-semibold text-foreground">
               {hoveredNode.name}
             </p>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className="font-mono text-[10px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-[3px]"
+                className="font-code text-[10px] uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-[3px]"
                 style={{
                   backgroundColor: `${NODE_COLORS[hoveredNode.type]}20`,
                   color: NODE_COLORS[hoveredNode.type],
@@ -347,16 +347,16 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
                 {hoveredNode.type}
               </span>
               {hoveredNode.isExternal && (
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="font-code text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                   external
                 </span>
               )}
             </div>
             <div className="flex gap-3 mt-1.5">
-              <span className="font-mono text-[10px] text-muted-foreground">
+              <span className="font-code text-[10px] text-muted-foreground">
                 LOC: <span className="text-foreground">{hoveredNode.loc}</span>
               </span>
-              <span className="font-mono text-[10px] text-muted-foreground">
+              <span className="font-code text-[10px] text-muted-foreground">
                 Complexity:{" "}
                 <span className="text-foreground">{hoveredNode.complexity}</span>
               </span>

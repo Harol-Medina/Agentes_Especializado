@@ -12,6 +12,7 @@ from typing import Optional
 
 from src.adapters.bedrock_adapter import BedrockAdapter, BedrockInvocationError
 from src.agents.base import AgentOutput, BaseAgent, PipelineContext, AgentExecutionError
+from src.agents.dead_code_detector import DeadCodeDetector
 from src.domain.models.agent_result import AgentStatus
 from src.domain.models.project_model import NodeType
 
@@ -45,12 +46,17 @@ class QualityAgent(BaseAgent):
         return context.project_model is not None
 
     async def execute(self, context: PipelineContext) -> AgentOutput:
-        """Compute metrics and ask Claude for code smell analysis."""
+        """Compute metrics, detect dead code, and ask Claude for code smell analysis."""
         project = context.project_model
         assert project is not None
 
         try:
             metrics = self._compute_metrics(context)
+
+            # Dead code detection (graph-based, no LLM needed)
+            detector = DeadCodeDetector()
+            dead_code = detector.detect(project)
+
             system_prompt = self._build_system_prompt()
             user_prompt = self._build_user_prompt(metrics)
 
@@ -61,6 +67,7 @@ class QualityAgent(BaseAgent):
             )
 
             report = self._parse_response(raw_response, metrics)
+            report["dead_code"] = dead_code
 
             return AgentOutput(
                 agent_name=self.name,

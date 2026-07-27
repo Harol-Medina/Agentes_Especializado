@@ -178,6 +178,10 @@ class ModernizationAgent(BaseAgent):
             '- "tech_debt_items": list of objects {description, category, severity, effort_to_fix}\n'
             '- "recommended_patterns": list of objects {pattern, rationale, applicable_modules}\n'
             '- "quick_wins": list of objects {action, impact, effort} for low-effort high-impact improvements\n'
+            '- "roadmap": list of objects {sprint, actions} where sprint is an integer (1-6) and actions is a list of '
+            "objects {action, justification, estimated_hours, category}. "
+            "category is one of: dead_code, security, dependencies, decoupling, refactoring, testing. "
+            "Priority order: dead_code_removal → security_fixes → dependency_updates → module_decoupling → architecture_refactoring → testing\n"
             '- "summary": a brief 3-4 sentence modernization strategy overview\n\n'
             "Return ONLY valid JSON. No markdown fences, no explanation text outside the JSON."
         )
@@ -221,6 +225,41 @@ class ModernizationAgent(BaseAgent):
         plan.setdefault("tech_debt_items", [])
         plan.setdefault("recommended_patterns", [])
         plan.setdefault("quick_wins", [])
+        plan.setdefault("roadmap", [])
         plan.setdefault("summary", "")
 
+        # Ensure roadmap has proper structure if empty
+        if not plan["roadmap"]:
+            plan["roadmap"] = self._generate_fallback_roadmap(plan)
+
         return plan
+
+    def _generate_fallback_roadmap(self, plan: dict) -> list[dict]:
+        """Generate a basic roadmap from migration_steps if Claude didn't produce one."""
+        roadmap: list[dict] = []
+        steps = plan.get("migration_steps", [])
+
+        if not steps:
+            return []
+
+        # Distribute steps across 4 sprints
+        sprint_size = max(1, len(steps) // 4)
+        for i, step in enumerate(steps):
+            sprint_num = min(4, (i // sprint_size) + 1)
+            title = step.get("title", f"Step {i+1}") if isinstance(step, dict) else str(step)
+            effort = step.get("estimated_effort", "medium") if isinstance(step, dict) else "medium"
+
+            # Find or create sprint entry
+            sprint_entry = next((s for s in roadmap if s["sprint"] == sprint_num), None)
+            if sprint_entry is None:
+                sprint_entry = {"sprint": sprint_num, "actions": []}
+                roadmap.append(sprint_entry)
+
+            sprint_entry["actions"].append({
+                "action": title,
+                "justification": step.get("description", "") if isinstance(step, dict) else "",
+                "estimated_hours": {"low": 4, "medium": 8, "high": 16, "very_high": 32}.get(effort, 8),
+                "category": "refactoring",
+            })
+
+        return roadmap

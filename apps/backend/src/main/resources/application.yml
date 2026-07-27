@@ -5,6 +5,10 @@ spring:
   application:
     name: archaeologist-backend
 
+  # Force servlet (Tomcat) mode — WebFlux WebClient is used as library only
+  main:
+    web-application-type: servlet
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/archaeologist}
     username: ${SPRING_DATASOURCE_USERNAME:archaeologist}

@@ -48,10 +48,10 @@ export function Header() {
             </svg>
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="font-display text-sm font-bold text-foreground leading-tight">
+            <span className="font-heading text-sm font-bold text-foreground leading-tight">
               Software Archaeologist
             </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground leading-tight">
+            <span className="font-code text-[9px] uppercase tracking-[0.1em] text-muted-foreground leading-tight">
               Multi-Agent System
             </span>
           </div>
@@ -64,7 +64,7 @@ export function Header() {
               key={item.label}
               href={item.href}
               className={cn(
-                "font-body text-[13px] px-3 py-1.5 rounded transition-colors duration-150",
+                "font-sans text-[13px] px-3 py-1.5 rounded transition-colors duration-150",
                 item.active
                   ? "text-primary font-semibold border-b-2 border-primary"
                   : "text-muted-foreground hover:text-foreground font-normal"
@@ -80,7 +80,7 @@ export function Header() {
           {/* Status badge */}
           <div className="hidden sm:flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981] animate-status-pulse" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#10B981]">
+            <span className="font-code text-[10px] uppercase tracking-[0.08em] text-[#10B981]">
               Activo
             </span>
           </div>
@@ -89,7 +89,7 @@ export function Header() {
           <Link
             href="/"
             className={cn(
-              "font-body text-[12px] font-bold tracking-[0.04em]",
+              "font-sans text-[12px] font-bold tracking-[0.04em]",
               "bg-primary text-primary-foreground",
               "px-3.5 py-2 rounded",
               "hover:bg-primary/90 transition-colors duration-150",
@@ -130,7 +130,7 @@ export function Header() {
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "font-body text-[14px] px-3 py-2 rounded transition-colors duration-150",
+                  "font-sans text-[14px] px-3 py-2 rounded transition-colors duration-150",
                   item.active
                     ? "text-primary font-semibold bg-primary/10"
                     : "text-muted-foreground hover:text-foreground"

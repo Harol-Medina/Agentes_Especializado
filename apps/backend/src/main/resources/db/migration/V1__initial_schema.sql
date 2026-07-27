@@ -25,7 +25,7 @@ CREATE TABLE analysis_jobs (
     completed_at    TIMESTAMP WITH TIME ZONE,
     error_message   TEXT,
     CONSTRAINT valid_status CHECK (
-        status IN ('pending', 'cloning', 'analyzing', 'completed', 'failed')
+        status IN ('pending', 'cloning', 'analyzing', 'completed', 'failed', 'cancelled')
     )
 );
 

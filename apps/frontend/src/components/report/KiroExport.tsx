@@ -12,7 +12,7 @@ function MarkdownPreview({ content }: { content: string }) {
   const lines = content.split("\n");
 
   return (
-    <pre className="whitespace-pre-wrap break-words text-sm font-mono leading-relaxed">
+    <pre className="whitespace-pre-wrap break-words text-sm font-code leading-relaxed">
       {lines.map((line, i) => {
         // Code block lines
         if (line.startsWith("```")) {
@@ -121,6 +121,41 @@ export function KiroExport({ projectId }: KiroExportProps) {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPackage = async () => {
+    try {
+      const response = await fetch(`/api/v1/export/kiro/${projectId}/package`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kiro-spec-${projectId}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // Fallback: try analyzer endpoint directly
+      try {
+        const response = await fetch(`/api/v1/kiro-spec/${projectId}/package`);
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `kiro-spec-${projectId}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        // silently fail — package not available
+      }
+    }
+  };
+
   const handleCopy = async () => {
     if (!markdown) return;
     try {
@@ -146,7 +181,7 @@ export function KiroExport({ projectId }: KiroExportProps) {
       <div className="container py-10">
         <div className="flex flex-col items-center justify-center gap-4 py-20">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm font-body">
+          <p className="text-muted-foreground text-sm font-sans">
             Loading Kiro spec...
           </p>
         </div>
@@ -159,7 +194,7 @@ export function KiroExport({ projectId }: KiroExportProps) {
     return (
       <div className="container py-10">
         <div className="bg-card border border-border rounded-xl p-6 text-center">
-          <p className="text-[#EF4444] font-mono text-sm mb-2">
+          <p className="text-[#EF4444] font-code text-sm mb-2">
             Failed to load Kiro spec
           </p>
           <p className="text-muted-foreground text-sm">{error}</p>
@@ -172,7 +207,7 @@ export function KiroExport({ projectId }: KiroExportProps) {
     <div className="container py-8">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-xl font-bold text-foreground">
+        <h2 className="font-heading text-xl font-bold text-foreground">
           Kiro Spec Export
         </h2>
 
@@ -191,9 +226,23 @@ export function KiroExport({ projectId }: KiroExportProps) {
             {copied ? "Copied!" : "Copy"}
           </button>
 
-          {/* Download button */}
+          {/* Download markdown button */}
           <button
             onClick={handleDownload}
+            className={cn(
+              "px-4 py-2 rounded-md text-xs font-bold tracking-wide",
+              "border border-border text-muted-foreground",
+              "hover:border-primary/40 hover:text-foreground",
+              "transition-colors duration-150",
+              "focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+            )}
+          >
+            Download .md
+          </button>
+
+          {/* Download .kiro package (zip) */}
+          <button
+            onClick={handleDownloadPackage}
             className={cn(
               "px-4 py-2 rounded-md text-xs font-bold tracking-wide",
               "bg-primary text-primary-foreground",
@@ -202,7 +251,7 @@ export function KiroExport({ projectId }: KiroExportProps) {
               "focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             )}
           >
-            Download .md
+            Download .kiro Package
           </button>
         </div>
       </div>

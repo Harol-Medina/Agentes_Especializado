@@ -73,7 +73,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="font-code text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             Loading analysis...
           </p>
         </div>
@@ -87,10 +87,10 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="bg-card border border-border rounded-xl p-8 max-w-md text-center space-y-3">
           <div className="w-3 h-3 rounded-full bg-[#EF4444] shadow-[0_0_6px_#EF4444] mx-auto" />
-          <h2 className="font-display text-lg font-bold text-foreground">
+          <h2 className="font-heading text-lg font-bold text-foreground">
             Connection Error
           </h2>
-          <p className="font-body text-sm text-muted-foreground">{error}</p>
+          <p className="font-sans text-sm text-muted-foreground">{error}</p>
         </div>
       </div>
     );
@@ -118,30 +118,30 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
           {isCompleted ? (
             <>
               <div className="w-3 h-3 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981] mx-auto" />
-              <h1 className="font-display font-bold text-foreground text-2xl pt-2">
+              <h1 className="font-heading font-bold text-foreground text-2xl pt-2">
                 Analysis Complete
               </h1>
-              <p className="font-body text-sm text-muted-foreground">
+              <p className="font-sans text-sm text-muted-foreground">
                 Your repository has been analyzed successfully.
               </p>
             </>
           ) : isFailed ? (
             <>
               <div className="w-3 h-3 rounded-full bg-[#EF4444] shadow-[0_0_8px_#EF4444] mx-auto" />
-              <h1 className="font-display font-bold text-foreground text-2xl pt-2">
+              <h1 className="font-heading font-bold text-foreground text-2xl pt-2">
                 Analysis Failed
               </h1>
-              <p className="font-body text-sm text-[#EF4444]">
+              <p className="font-sans text-sm text-[#EF4444]">
                 An error occurred during the analysis pipeline.
               </p>
             </>
           ) : (
             <>
               <div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_#F59E0B] animate-status-pulse mx-auto" />
-              <h1 className="font-display font-bold text-foreground text-2xl pt-2">
+              <h1 className="font-heading font-bold text-foreground text-2xl pt-2">
                 Analyzing repository...
               </h1>
-              <p className="font-body text-sm text-muted-foreground">
+              <p className="font-sans text-sm text-muted-foreground">
                 Our AI agents are inspecting the codebase. This may take a few minutes.
               </p>
             </>
@@ -159,7 +159,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="font-mono text-[10px] text-muted-foreground tracking-wider">
+          <p className="font-code text-[10px] text-muted-foreground tracking-wider">
             {completedAgents} / {totalAgents} AGENTS COMPLETE
           </p>
         </div>
@@ -177,7 +177,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
                   : "bg-primary shadow-[0_0_6px_#F59E0B] animate-status-pulse"
               )}
             />
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span className="font-code text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               Agent Pipeline
             </span>
           </div>
@@ -195,12 +195,12 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
                       getStatusDotClass(status)
                     )}
                   />
-                  <span className="font-body text-[13px] text-card-foreground flex-1">
+                  <span className="font-sans text-[13px] text-card-foreground flex-1">
                     {agent.label}
                   </span>
                   <span
                     className={cn(
-                      "font-mono text-[10px] uppercase tracking-[0.08em]",
+                      "font-code text-[10px] uppercase tracking-[0.08em]",
                       getStatusLabelClass(status)
                     )}
                   >
@@ -220,7 +220,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
               className={cn(
                 "flex items-center justify-center gap-2 px-4 py-3 rounded-md",
                 "bg-primary text-primary-foreground",
-                "font-body text-xs font-bold uppercase tracking-wider",
+                "font-sans text-xs font-bold uppercase tracking-wider",
                 "hover:opacity-90 transition-opacity duration-150",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               )}
@@ -232,7 +232,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
               className={cn(
                 "flex items-center justify-center gap-2 px-4 py-3 rounded-md",
                 "border border-border bg-muted/40 text-foreground",
-                "font-body text-xs font-bold uppercase tracking-wider",
+                "font-sans text-xs font-bold uppercase tracking-wider",
                 "hover:border-primary/50 hover:text-primary transition-colors duration-150",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               )}
@@ -244,7 +244,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
               className={cn(
                 "flex items-center justify-center gap-2 px-4 py-3 rounded-md",
                 "border border-border bg-muted/40 text-foreground",
-                "font-body text-xs font-bold uppercase tracking-wider",
+                "font-sans text-xs font-bold uppercase tracking-wider",
                 "hover:border-primary/50 hover:text-primary transition-colors duration-150",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               )}
@@ -256,7 +256,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
               className={cn(
                 "flex items-center justify-center gap-2 px-4 py-3 rounded-md",
                 "border border-border bg-muted/40 text-foreground",
-                "font-body text-xs font-bold uppercase tracking-wider",
+                "font-sans text-xs font-bold uppercase tracking-wider",
                 "hover:border-primary/50 hover:text-primary transition-colors duration-150",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               )}
@@ -269,7 +269,7 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
         {/* Failed: error details */}
         {isFailed && error && (
           <div className="bg-[#EF444410] border border-[#EF444440] rounded-xl p-4">
-            <p className="font-mono text-[11px] text-[#EF4444]">{error}</p>
+            <p className="font-code text-[11px] text-[#EF4444]">{error}</p>
           </div>
         )}
       </div>

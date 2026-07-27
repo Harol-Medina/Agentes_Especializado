@@ -39,7 +39,7 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
         <div
           className={cn(
             "text-sm leading-relaxed whitespace-pre-wrap break-words",
-            !isUser && "font-body"
+            !isUser && "font-sans"
           )}
         >
           {renderContent(content)}
@@ -53,7 +53,7 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
                 key={source.file}
                 className={cn(
                   "inline-flex items-center gap-1",
-                  "font-mono text-[10px] text-secondary",
+                  "font-code text-[10px] text-secondary",
                   "bg-secondary/10 border border-secondary/30",
                   "rounded-[3px] px-1.5 py-0.5"
                 )}
@@ -118,7 +118,7 @@ function renderContent(content: string) {
           key={i}
           className="my-2 p-3 bg-muted border border-border rounded-md overflow-x-auto"
         >
-          <code className="font-mono text-xs text-foreground">{codeContent}</code>
+          <code className="font-code text-xs text-foreground">{codeContent}</code>
         </pre>
       );
     }
@@ -132,7 +132,7 @@ function renderContent(content: string) {
             return (
               <code
                 key={j}
-                className="font-mono text-xs bg-muted border border-border rounded px-1 py-0.5"
+                className="font-code text-xs bg-muted border border-border rounded px-1 py-0.5"
               >
                 {inline.slice(1, -1)}
               </code>

@@ -12,6 +12,7 @@ from typing import Optional
 
 from src.adapters.bedrock_adapter import BedrockAdapter, BedrockInvocationError
 from src.agents.base import AgentOutput, BaseAgent, PipelineContext, AgentExecutionError
+from src.agents.c4_generator import C4Generator
 from src.domain.models.agent_result import AgentStatus
 from src.domain.models.project_model import NodeType
 
@@ -66,6 +67,11 @@ class DocumentationAgent(BaseAgent):
             )
 
             bundle = self._parse_response(raw_response)
+
+            # Generate C4 diagrams (no LLM needed — pure graph analysis)
+            c4 = C4Generator()
+            c4_diagrams = c4.generate(project, context.architecture_report)
+            bundle["c4_diagrams"] = c4_diagrams.to_dict()
 
             return AgentOutput(
                 agent_name=self.name,

@@ -86,7 +86,7 @@ export function GraphControls({
     >
       {/* Search */}
       <div>
-        <label className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
+        <label className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
           Search
         </label>
         <input
@@ -95,7 +95,7 @@ export function GraphControls({
           value={filters.searchQuery}
           onChange={handleSearchChange}
           className={cn(
-            "w-full px-3 py-2 text-[13px] font-body",
+            "w-full px-3 py-2 text-[13px] font-sans",
             "bg-background border border-border rounded-[6px]",
             "text-foreground placeholder:text-muted-foreground",
             "focus:outline-none focus:ring-2 focus:ring-ring"
@@ -105,7 +105,7 @@ export function GraphControls({
 
       {/* Node Types */}
       <div>
-        <label className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
+        <label className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
           Node Types
         </label>
         <div className="flex flex-col gap-1.5">
@@ -145,7 +145,7 @@ export function GraphControls({
                   </svg>
                 )}
               </span>
-              <span className="font-body text-[13px] text-card-foreground">
+              <span className="font-sans text-[13px] text-card-foreground">
                 {opt.label}
               </span>
               <span
@@ -159,7 +159,7 @@ export function GraphControls({
 
       {/* Edge Types */}
       <div>
-        <label className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
+        <label className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
           Edge Types
         </label>
         <div className="flex flex-col gap-1.5">
@@ -199,7 +199,7 @@ export function GraphControls({
                   </svg>
                 )}
               </span>
-              <span className="font-body text-[13px] text-card-foreground">
+              <span className="font-sans text-[13px] text-card-foreground">
                 {opt.label}
               </span>
               <span
@@ -213,7 +213,7 @@ export function GraphControls({
 
       {/* Depth Slider */}
       <div>
-        <label className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
+        <label className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
           Depth: {filters.depth}
         </label>
         <input
@@ -224,7 +224,7 @@ export function GraphControls({
           onChange={handleDepthChange}
           className="w-full accent-primary"
         />
-        <div className="flex justify-between font-mono text-[10px] text-muted-foreground mt-1">
+        <div className="flex justify-between font-code text-[10px] text-muted-foreground mt-1">
           <span>1</span>
           <span>10</span>
         </div>
@@ -232,7 +232,7 @@ export function GraphControls({
 
       {/* Stats */}
       <div className="mt-auto pt-4 border-t border-border">
-        <label className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
+        <label className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2 block">
           Statistics
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -249,10 +249,10 @@ export function GraphControls({
 function StatItem({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col">
-      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="font-code text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
-      <span className="font-display text-sm font-bold text-foreground">
+      <span className="font-heading text-sm font-bold text-foreground">
         {value}
       </span>
     </div>

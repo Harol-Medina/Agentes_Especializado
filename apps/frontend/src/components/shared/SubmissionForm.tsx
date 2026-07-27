@@ -71,7 +71,7 @@ export function SubmissionForm() {
       <div className="flex flex-col gap-2">
         <label
           htmlFor="repo-url"
-          className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground"
+          className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground"
         >
           Repository URL
         </label>
@@ -91,7 +91,7 @@ export function SubmissionForm() {
           className={cn(
             "w-full px-4 py-2.5 rounded-md",
             "bg-muted border border-border",
-            "font-body text-sm text-foreground placeholder:text-muted-foreground",
+            "font-sans text-sm text-foreground placeholder:text-muted-foreground",
             "focus:outline-none focus:ring-2 focus:ring-ring",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "transition-colors duration-150"
@@ -106,7 +106,7 @@ export function SubmissionForm() {
           id="url-feedback"
           role="alert"
           className={cn(
-            "text-xs font-body",
+            "text-xs font-sans",
             formState === "busy" ? "text-primary" : "text-danger"
           )}
         >
@@ -124,7 +124,7 @@ export function SubmissionForm() {
         className={cn(
           "w-full py-2.5 rounded-[4px]",
           "bg-primary text-primary-foreground",
-          "font-body font-bold text-xs tracking-wider uppercase",
+          "font-sans font-bold text-xs tracking-wider uppercase",
           "hover:opacity-90 transition-opacity duration-150",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
           "disabled:opacity-50 disabled:cursor-not-allowed",

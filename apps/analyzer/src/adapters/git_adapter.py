@@ -2,10 +2,14 @@
 
 Provides shallow cloning of public GitHub repositories with size/file-count
 validation and exclusion of non-source directories.
+
+All blocking I/O (clone, file traversal) is wrapped with asyncio.to_thread()
+to avoid blocking the FastAPI/uvicorn event loop.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import shutil
@@ -46,8 +50,11 @@ class GitAdapter:
         self._max_file_count = settings.max_file_count
         self._base_dir.mkdir(parents=True, exist_ok=True)
 
-    def clone(self, repo_url: str, job_id: str) -> Path:
+    async def clone(self, repo_url: str, job_id: str) -> Path:
         """Clone a repository (shallow, depth=1) into a job-specific directory.
+
+        Runs the blocking git clone in a thread pool to avoid blocking
+        the async event loop.
 
         Args:
             repo_url: Full HTTPS URL to the GitHub repository.
@@ -63,12 +70,13 @@ class GitAdapter:
 
         # Clean up if previous attempt left artifacts
         if dest.exists():
-            shutil.rmtree(dest, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, dest, True)
 
         logger.info("Cloning repository — url=%s, dest=%s", repo_url, dest)
 
         try:
-            Repo.clone_from(
+            await asyncio.to_thread(
+                Repo.clone_from,
                 repo_url,
                 str(dest),
                 depth=1,
@@ -80,10 +88,10 @@ class GitAdapter:
                 message=f"Failed to clone repository '{repo_url}': {exc}",
             ) from exc
 
-        # Validate file count
-        file_count = self._count_source_files(dest)
+        # Validate file count (also blocking I/O — offload to thread)
+        file_count = await asyncio.to_thread(self._count_source_files, dest)
         if file_count > self._max_file_count:
-            shutil.rmtree(dest, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, dest, True)
             raise AgentExecutionError(
                 agent_name="repository_agent",
                 message=(
@@ -99,18 +107,24 @@ class GitAdapter:
         )
         return dest
 
-    def cleanup(self, repo_path: Path) -> None:
+    async def cleanup(self, repo_path: Path) -> None:
         """Remove a previously cloned repository directory."""
         if repo_path.exists():
-            shutil.rmtree(repo_path, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, repo_path, True)
             logger.info("Cleaned up repo at %s", repo_path)
 
-    def list_source_files(self, repo_path: Path) -> list[Path]:
+    async def list_source_files(self, repo_path: Path) -> list[Path]:
         """List all source files in the repo, excluding non-source directories.
+
+        Offloaded to thread pool since os.walk is blocking I/O.
 
         Returns:
             List of Path objects pointing to source files.
         """
+        return await asyncio.to_thread(self._list_source_files_sync, repo_path)
+
+    def _list_source_files_sync(self, repo_path: Path) -> list[Path]:
+        """Synchronous implementation of file listing."""
         source_files: list[Path] = []
         for root, dirs, files in os.walk(repo_path):
             # Prune excluded directories in-place

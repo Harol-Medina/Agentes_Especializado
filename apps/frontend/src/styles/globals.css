@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 /* =============================================
-   Source paths for Tailwind v4 class detection
+   Source detection — tells Tailwind where to
+   scan for utility class usage
    ============================================= */
 @source "../app/**/*.tsx";
 @source "../components/**/*.tsx";
+@source "../lib/**/*.ts";
 
 /* =============================================
-   Theme tokens — Tailwind v4 syntax
-   All utility classes (bg-background, text-primary,
-   font-display, etc.) are generated from these.
+   Theme Configuration — Tailwind v4
+   Generates all utility classes: bg-*, text-*, font-*, etc.
    ============================================= */
-@theme inline {
+@theme {
   /* ─── Colors ─── */
   --color-background: #080D18;
   --color-foreground: #F0F4FF;
@@ -32,12 +33,16 @@
   --color-purple: #8B5CF6;
   --color-orange: #F97316;
 
-  /* ─── Fonts ─── */
-  --font-display: "Roboto Slab", serif;
-  --font-body: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  /* ─── Font families ───
+     Using different token names to avoid collision with
+     Next.js --font-display / --font-body / --font-mono variables.
+     Usage: font-heading, font-sans, font-code
+  */
+  --font-heading: "Roboto Slab", serif;
+  --font-sans: "Inter", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
 
-  /* ─── Radius ─── */
+  /* ─── Border radius ─── */
   --radius-sm: 3px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -63,7 +68,7 @@
 }
 
 /* =============================================
-   Base layer — global resets and defaults
+   Base styles
    ============================================= */
 @layer base {
   html {
@@ -75,12 +80,12 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     line-height: 1.7;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
     font-weight: 700;
     line-height: 1.2;
     color: var(--color-foreground);
@@ -96,16 +101,14 @@
   h3 { font-size: 16px; }
 
   code, pre, kbd, samp {
-    font-family: var(--font-mono);
+    font-family: var(--font-code);
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
 
-  /* Focus */
   :focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
@@ -114,7 +117,7 @@
 }
 
 /* =============================================
-   Custom utility classes
+   Custom utilities (Tailwind v4 @utility)
    ============================================= */
 @utility container {
   max-width: 1280px;

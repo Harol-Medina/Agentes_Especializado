@@ -38,12 +38,12 @@ export function MetricsGrid({ metrics, className }: MetricsGridProps) {
           className="bg-card border border-border rounded-xl p-4 flex flex-col items-start gap-1"
         >
           <span
-            className="font-display text-[28px] font-bold leading-tight"
+            className="font-heading text-[28px] font-bold leading-tight"
             style={{ color: metric.color ?? "var(--primary)" }}
           >
             {metric.value}
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+          <span className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
             {metric.label}
           </span>
         </div>

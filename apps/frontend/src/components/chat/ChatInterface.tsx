@@ -70,7 +70,7 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
       {/* Error banner */}
       {error && (
         <div className="px-4 py-2 bg-[#EF4444]/10 border-t border-[#EF4444]/30 text-center">
-          <p className="font-mono text-xs text-[#EF4444]">{error}</p>
+          <p className="font-code text-xs text-[#EF4444]">{error}</p>
         </div>
       )}
 
@@ -90,7 +90,7 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
             className={cn(
               "flex-1 h-10 px-4",
               "bg-muted border border-border rounded-md",
-              "font-body text-sm text-foreground placeholder:text-muted-foreground",
+              "font-sans text-sm text-foreground placeholder:text-muted-foreground",
               "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "transition-colors duration-150"
@@ -103,7 +103,7 @@ export function ChatInterface({ projectId }: ChatInterfaceProps) {
             className={cn(
               "h-10 px-4 rounded-md",
               "bg-primary text-primary-foreground",
-              "font-body text-sm font-semibold",
+              "font-sans text-sm font-semibold",
               "hover:bg-primary/90",
               "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
               "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -146,10 +146,10 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <h2 className="font-display text-lg font-bold text-foreground mb-2">
+      <h2 className="font-heading text-lg font-bold text-foreground mb-2">
         Ask about this codebase
       </h2>
-      <p className="font-body text-sm text-muted-foreground max-w-sm">
+      <p className="font-sans text-sm text-muted-foreground max-w-sm">
         Ask questions about architecture, dependencies, patterns, or any aspect
         of the analyzed repository. Responses are powered by RAG over the source code.
       </p>

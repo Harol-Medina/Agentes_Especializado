@@ -38,13 +38,13 @@ AWS_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 # Exact model IDs required by the platform — these must match
 # the IAM policy in policy-minimal.json
 REQUIRED_MODELS=(
-  "anthropic.claude-3-sonnet-20240229-v1:0"
+  "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
   "amazon.titan-embed-text-v2:0"
 )
 
 # Human-readable descriptions for the output
 declare -A MODEL_DESCRIPTIONS
-MODEL_DESCRIPTIONS["anthropic.claude-3-sonnet-20240229-v1:0"]="Claude 3 Sonnet (reasoning & generation)"
+MODEL_DESCRIPTIONS["us.anthropic.claude-sonnet-4-5-20250929-v1:0"]="Claude Sonnet 4.5 (reasoning & generation)"
 MODEL_DESCRIPTIONS["amazon.titan-embed-text-v2:0"]="Titan Text Embeddings V2 (RAG embeddings)"
 
 # Tracking
