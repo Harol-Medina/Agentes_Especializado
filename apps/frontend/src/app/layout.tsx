@@ -3,7 +3,7 @@ import { Roboto_Slab, Inter, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 
 // ─────────────────────────────────────────────
-// Google Fonts
+// Google Fonts — loaded via next/font for optimal performance
 // ─────────────────────────────────────────────
 
 const robotoSlab = Roboto_Slab({
@@ -52,8 +52,8 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`dark ${robotoSlab.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      lang="es"
+      className={`${robotoSlab.variable} ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body className="bg-background text-foreground font-body antialiased min-h-screen">
