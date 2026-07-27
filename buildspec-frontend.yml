@@ -1,0 +1,38 @@
+version: 0.2
+env:
+  variables:
+    NEXT_PUBLIC_API_URL: http://archaeologist-backend-prod.eba-g7apjaxu.us-east-1.elasticbeanstalk.com
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+  pre_build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/apps/frontend && npm ci
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/apps/frontend && npm run build
+  post_build:
+    commands:
+      - mkdir -p /tmp/output/.next/static /tmp/output/public
+      - cp -r $CODEBUILD_SRC_DIR/apps/frontend/.next/standalone/. /tmp/output/
+      - cp -r $CODEBUILD_SRC_DIR/apps/frontend/.next/static/. /tmp/output/.next/static/ 2>/dev/null || true
+      - cp -r $CODEBUILD_SRC_DIR/apps/frontend/public/. /tmp/output/public/ 2>/dev/null || true
+      - |
+        cat > /tmp/output/Dockerfile << 'EOF'
+        FROM node:20-alpine
+        WORKDIR /app
+        ENV NODE_ENV=production
+        ENV PORT=3000
+        ENV HOSTNAME=0.0.0.0
+        COPY . .
+        EXPOSE 3000
+        CMD ["node", "server.js"]
+        EOF
+      - echo '--- Output contents ---'
+      - find /tmp/output -type f | head -50
+      - find /tmp/output -type f | wc -l
+artifacts:
+  base-directory: /tmp/output
+  files:
+    - '**/*'
