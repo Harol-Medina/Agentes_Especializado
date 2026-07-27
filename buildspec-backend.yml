@@ -11,7 +11,7 @@ phases:
       - echo "Building backend from branch $CODEBUILD_SOURCE_VERSION"
   build:
     commands:
-      - cd $CODEBUILD_SRC_DIR/apps/backend && chmod +x gradlew && ./gradlew bootJar --no-daemon -x test
+      - cd $CODEBUILD_SRC_DIR/apps/backend && gradle bootJar --no-daemon -x test
   post_build:
     commands:
       - mkdir -p /tmp/output
