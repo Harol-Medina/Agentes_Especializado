@@ -1,0 +1,38 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+  pre_build:
+    commands:
+      - echo "Building analyzer from branch $CODEBUILD_SOURCE_VERSION"
+  build:
+    commands:
+      - echo "Packaging analyzer source..."
+  post_build:
+    commands:
+      - mkdir -p /tmp/output/src
+      - cp $CODEBUILD_SRC_DIR/apps/analyzer/requirements.txt /tmp/output/requirements.txt
+      - cp -r $CODEBUILD_SRC_DIR/apps/analyzer/src/. /tmp/output/src/
+      - |
+        cat > /tmp/output/Dockerfile << 'EOF'
+        FROM python:3.11-slim AS build
+        WORKDIR /app
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
+        COPY src/ ./src/
+
+        FROM python:3.11-slim
+        RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+        WORKDIR /app
+        COPY --from=build /app/deps /usr/local/lib/python3.11/site-packages
+        COPY --from=build /app/src ./src/
+        RUN useradd --create-home appuser && mkdir -p /tmp/repos && chown appuser:appuser /tmp/repos
+        USER appuser
+        EXPOSE 8000
+        CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        EOF
+artifacts:
+  base-directory: /tmp/output
+  files:
+    - '**/*'
