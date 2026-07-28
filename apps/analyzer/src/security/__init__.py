@@ -1,1 +1,1 @@
-"""Security module — prompt guardrails, rate limiting, and content filtering."""
+"""Security package — rate limiting, prompt guard, Bedrock guardrail."""

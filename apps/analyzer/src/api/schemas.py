@@ -87,7 +87,9 @@ class JobStatusResponse(BaseModel):
 class QueryRequest(BaseModel):
     """Payload for a RAG chat query."""
 
-    project_id: UUID = Field(..., description="ID of the analysed project.")
+    model_config = {"populate_by_name": True}
+
+    project_id: UUID = Field(..., alias="projectId", description="ID of the analysed project.")
     question: str = Field(
         ...,
         min_length=1,
@@ -96,6 +98,7 @@ class QueryRequest(BaseModel):
     )
     max_chunks: int = Field(
         default=10,
+        alias="maxChunks",
         ge=1,
         le=50,
         description="Maximum number of context chunks to retrieve.",

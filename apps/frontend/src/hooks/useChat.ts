@@ -106,10 +106,10 @@ export function useChat(projectId: string): UseChatReturn {
           let eventType = "";
 
           for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              eventType = line.slice(7).trim();
-            } else if (line.startsWith("data: ")) {
-              const dataStr = line.slice(6);
+            if (line.startsWith("event:")) {
+              eventType = line.slice(6).trim();
+            } else if (line.startsWith("data:")) {
+              const dataStr = line.slice(5).trim();
 
               try {
                 const data = JSON.parse(dataStr);

@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, status
 
+from src.adapters.postgres_adapter import PostgresAdapter
 from src.adapters.webhook_adapter import WebhookAdapter
 from src.agents.architecture_agent import ArchitectureAgent
 from src.agents.documentation_agent import DocumentationAgent
@@ -28,6 +30,9 @@ from src.api.job_store import jobs
 from src.api.schemas import AnalyzeRequest, AnalyzeResponse
 from src.config import get_settings
 from src.domain.models.analysis_job import AnalysisJob, JobStatus
+from src.parsing.chunker import ASTChunker
+from src.rag.embeddings import TitanEmbeddingsClient
+from src.rag.indexer import EmbeddingIndexer
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +115,17 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
 
         logger.info("Pipeline completed — job_id=%s", job.id)
 
+        # ── Embedding indexing for RAG chat ──────────────────────────────
+        # Run after pipeline completes so chat can answer questions
+        try:
+            await _index_embeddings(job, context)
+        except Exception as idx_err:  # noqa: BLE001
+            logger.warning(
+                "Embedding indexing failed (chat will show no_context) — job_id=%s, error=%s",
+                job.id,
+                str(idx_err),
+            )
+
     except PipelineTerminatedError as exc:
         if job.cancel_requested:
             job.status = JobStatus.CANCELLED
@@ -134,6 +150,116 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
             job.id,
             str(exc),
         )
+
+
+async def _index_embeddings(job: AnalysisJob, context) -> None:
+    """Index code chunks as embeddings for RAG chat.
+
+    Chunks the parsed source files and generates Titan Embeddings V2 vectors,
+    then bulk inserts into code_embeddings table.
+    """
+    # Need repo_path and parsed files from context
+    repo_path_str = getattr(context, "repo_path", None)
+    project_model = context.project_model
+
+    if not repo_path_str or not project_model:
+        logger.warning("No repo_path or project_model — skipping embedding indexing")
+        return
+
+    # Get the parsed files from the graph builder's source
+    from src.adapters.git_adapter import GitAdapter
+
+    git_adapter = GitAdapter()
+    source_files = await git_adapter.list_source_files(Path(repo_path_str))
+
+    if not source_files:
+        logger.warning("No source files found for indexing — job_id=%s", job.id)
+        return
+
+    # Read file contents and create chunks
+    chunker = ASTChunker()
+
+    # Import tree-sitter parser to re-parse for chunking
+    from src.parsing.tree_sitter_parser import TreeSitterParser
+
+    parser = TreeSitterParser()
+    parsed_files = []
+    parseable_exts = {".java", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".py"}
+
+    for file_path in source_files:
+        if file_path.suffix.lower() in parseable_exts:
+            result = parser.parse_file(file_path)
+            if result is not None:
+                parsed_files.append(result)
+
+    if not parsed_files:
+        logger.warning("No parseable files for chunking — job_id=%s", job.id)
+        return
+
+    # Chunk the parsed files
+    chunks = chunker.chunk_parsed_files(parsed_files)
+    if not chunks:
+        logger.warning("Chunker produced 0 chunks — job_id=%s", job.id)
+        return
+
+    # Limit chunks to avoid excessive Bedrock calls (cost control)
+    max_chunks = 200
+    if len(chunks) > max_chunks:
+        logger.info(
+            "Limiting chunks from %d to %d for embedding — job_id=%s",
+            len(chunks), max_chunks, job.id,
+        )
+        chunks = chunks[:max_chunks]
+
+    logger.info("Generating embeddings for %d chunks — job_id=%s", len(chunks), job.id)
+
+    # Generate embeddings
+    embeddings_client = TitanEmbeddingsClient()
+    texts = [chunk.text for chunk in chunks]
+    embeddings = await embeddings_client.generate_batch(texts)
+
+    # Store in database
+    postgres = PostgresAdapter()
+    await postgres.connect()
+
+    try:
+        # Ensure project record exists (FK requirement for code_embeddings)
+        project_name = job.repo_url.rstrip("/").split("/")[-1] if job.repo_url else "unknown"
+        await postgres.execute(
+            """
+            INSERT INTO analysis_jobs (id, repo_url, status)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (id) DO NOTHING
+            """,
+            job.id,
+            job.repo_url,
+            "completed",
+        )
+        await postgres.execute(
+            """
+            INSERT INTO projects (id, job_id, repo_url, name, language, framework, total_files, total_loc)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING
+            """,
+            job.id,
+            job.id,
+            job.repo_url,
+            project_name,
+            project_model.language or "unknown",
+            project_model.framework or "unknown",
+            project_model.total_files,
+            project_model.total_loc,
+        )
+
+        indexer = EmbeddingIndexer(postgres=postgres)
+        count = await indexer.index_chunks(
+            project_id=job.id,
+            chunks=chunks,
+            embeddings=embeddings,
+        )
+        logger.info("Indexed %d embeddings for RAG — job_id=%s", count, job.id)
+    finally:
+        await postgres.close()
 
 
 @router.post(

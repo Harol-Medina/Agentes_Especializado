@@ -123,24 +123,68 @@ function renderContent(content: string) {
       );
     }
 
-    // Handle inline code within regular text
-    const inlineParts = part.split(/(`[^`]+`)/g);
+    // Render markdown-like text (headers, bold, lists, inline code)
+    const lines = part.split("\n");
     return (
       <span key={i}>
-        {inlineParts.map((inline, j) => {
-          if (inline.startsWith("`") && inline.endsWith("`")) {
-            return (
-              <code
-                key={j}
-                className="font-code text-xs bg-muted border border-border rounded px-1 py-0.5"
-              >
-                {inline.slice(1, -1)}
-              </code>
-            );
-          }
-          return <span key={j}>{inline}</span>;
+        {lines.map((line, li) => {
+          const el = renderLine(line);
+          return (
+            <span key={li}>
+              {el}
+              {li < lines.length - 1 && <br />}
+            </span>
+          );
         })}
       </span>
     );
+  });
+}
+
+function renderLine(line: string) {
+  // Headers
+  if (line.startsWith("### ")) {
+    return <strong className="block mt-3 mb-1 text-foreground font-semibold">{renderInline(line.slice(4))}</strong>;
+  }
+  if (line.startsWith("## ")) {
+    return <strong className="block mt-4 mb-1 text-foreground font-bold text-[15px]">{renderInline(line.slice(3))}</strong>;
+  }
+  if (line.startsWith("# ")) {
+    return <strong className="block mt-4 mb-2 text-foreground font-bold text-base">{renderInline(line.slice(2))}</strong>;
+  }
+
+  // Unordered list items
+  if (line.startsWith("- ") || line.startsWith("* ")) {
+    return <span className="block pl-4">• {renderInline(line.slice(2))}</span>;
+  }
+
+  // Numbered list items
+  const numberedMatch = line.match(/^(\d+)\.\s/);
+  if (numberedMatch) {
+    return <span className="block pl-4">{numberedMatch[1]}. {renderInline(line.slice(numberedMatch[0].length))}</span>;
+  }
+
+  return <>{renderInline(line)}</>;
+}
+
+function renderInline(text: string) {
+  // Split on bold (**...**) and inline code (`...`)
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code
+          key={i}
+          className="font-code text-xs bg-muted border border-border rounded px-1 py-0.5"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={i}>{part}</span>;
   });
 }

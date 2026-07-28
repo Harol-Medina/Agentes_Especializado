@@ -208,17 +208,17 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
         }
       }
 
-      // Label (only for larger or selected/hovered nodes)
-      if (size > 6 || isSelected) {
-        ctx.font = `${Math.max(3, size * 0.6)}px JetBrains Mono, monospace`;
+      // Label — always show for non-dimmed nodes
+      if (!dimmed) {
+        const fontSize = Math.max(4, Math.min(8, size * 0.8));
+        ctx.font = `${fontSize}px JetBrains Mono, monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = dimmed ? "rgba(240, 244, 255, 0.3)" : "rgba(240, 244, 255, 0.85)";
-        ctx.fillText(
-          node.name.length > 20 ? `${node.name.slice(0, 18)}...` : node.name,
-          node.x ?? 0,
-          (node.y ?? 0) + size + 2
-        );
+        ctx.fillStyle = isSelected
+          ? "rgba(240, 244, 255, 1)"
+          : "rgba(240, 244, 255, 0.9)";
+        const label = node.name.length > 25 ? `${node.name.slice(0, 23)}…` : node.name;
+        ctx.fillText(label, node.x ?? 0, (node.y ?? 0) + size + 3);
       }
     },
     [selectedNode, connectedIds]
@@ -290,7 +290,7 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
+    <div className="flex h-full w-full min-h-0 overflow-hidden">
       {/* Sidebar Controls */}
       <GraphControls
         filters={filters}
@@ -301,7 +301,7 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
       {/* Graph Canvas */}
       <div
         ref={containerRef}
-        className="flex-1 relative bg-background"
+        className="flex-1 relative bg-background min-h-0 min-w-0"
       >
         <ForceGraph2D
           width={dimensions.width}
@@ -326,7 +326,7 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
             className={cn(
               "fixed z-50 pointer-events-none",
               "bg-card border border-border rounded-[6px]",
-              "px-3 py-2 shadow-lg"
+              "px-3 py-2.5 shadow-lg max-w-xs"
             )}
             style={{
               left: tooltipPos.x + 12,
@@ -347,7 +347,7 @@ export function DependencyGraph({ projectId }: DependencyGraphProps) {
                 {hoveredNode.type}
               </span>
               {hoveredNode.isExternal && (
-                <span className="font-code text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="font-code text-[10px] uppercase tracking-[0.08em] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-[3px]">
                   external
                 </span>
               )}

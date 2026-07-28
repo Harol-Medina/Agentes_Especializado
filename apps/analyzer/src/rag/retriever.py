@@ -19,7 +19,7 @@ from src.rag.embeddings import TitanEmbeddingsClient
 logger = logging.getLogger(__name__)
 
 # Minimum similarity score to consider a chunk relevant
-_SIMILARITY_THRESHOLD = 0.3
+_SIMILARITY_THRESHOLD = 0.05
 
 
 @dataclass
