@@ -55,6 +55,18 @@ async def get_job_status(job_id: UUID) -> JobStatusResponse:
         elif result.status in (AgentStatus.PENDING, AgentStatus.SKIPPED):
             pending_agents.append(result.agent_name)
 
+    # Include the currently running agent if not already in results
+    if job.current_agent:
+        already_listed = any(a.name == job.current_agent for a in agents_list)
+        if not already_listed:
+            agents_list.append(
+                AgentProgressItem(
+                    name=job.current_agent,
+                    status="running",
+                    execution_order=len(agents_list) + 1,
+                )
+            )
+
     progress = JobProgress(
         completed_agents=completed_agents,
         current_agent=job.current_agent,

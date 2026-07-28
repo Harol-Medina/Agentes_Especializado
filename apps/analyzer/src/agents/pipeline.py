@@ -59,6 +59,7 @@ class AgentPipeline:
         self._agents = sorted(agents, key=lambda a: a.execution_order)
         self._webhook = webhook_adapter
         self._on_agent_complete = None
+        self._on_agent_start = None
         self._cancel_check = None
 
     def set_on_agent_complete(self, callback) -> None:
@@ -68,6 +69,14 @@ class AgentPipeline:
         Used to update the job store incrementally for progressive results.
         """
         self._on_agent_complete = callback
+
+    def set_on_agent_start(self, callback) -> None:
+        """Set a callback invoked before each agent starts executing.
+
+        The callback receives (agent_name: str, context: PipelineContext).
+        Used to update the job's current_agent for real-time progress tracking.
+        """
+        self._on_agent_start = callback
 
     def set_cancel_check(self, check_fn) -> None:
         """Set a function that returns True if the pipeline should stop.
@@ -138,6 +147,13 @@ class AgentPipeline:
                 execution_order=agent.execution_order,
                 started_at=datetime.now(timezone.utc),
             )
+
+            # Notify start callback for real-time progress
+            if self._on_agent_start is not None:
+                try:
+                    self._on_agent_start(agent.name, context)
+                except Exception:  # noqa: BLE001
+                    pass
 
             logger.info(
                 "Agent starting — agent=%s, order=%d, job_id=%s",

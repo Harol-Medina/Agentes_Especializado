@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useReport } from "@/hooks/useReport";
+import { useRouter } from "next/navigation";
 import { ReportSection } from "./ReportSection";
 import { MetricsGrid, type Metric } from "./MetricsGrid";
 import { MermaidDiagram } from "./MermaidDiagram";
@@ -43,6 +44,18 @@ const TABS: { id: ReportTab; label: string; agent: string }[] = [
 export function ArchitectureReport({ projectId }: ArchitectureReportProps) {
   const { report, isLoading, error } = useReport(projectId);
   const [activeTab, setActiveTab] = useState<ReportTab>("architecture");
+  const router = useRouter();
+
+  const failedAgents = report
+    ? Object.entries(report.agentsStatus).filter(([, s]) => s === "failed").map(([name]) => name)
+    : [];
+
+  async function handleReanalyze() {
+    if (!report) return;
+    // Navigate to home — user can re-submit the same repo
+    // The repo URL isn't in the report, so we redirect to start a new analysis
+    router.push("/");
+  }
 
   // ─── Loading State ───
   if (isLoading) {
@@ -93,6 +106,36 @@ export function ArchitectureReport({ projectId }: ArchitectureReportProps) {
 
       {/* Metrics Grid */}
       <MetricsGrid metrics={metrics} />
+
+      {/* Failed agents banner */}
+      {failedAgents.length > 0 && (
+        <div className="flex items-center justify-between bg-[#EF444410] border border-[#EF444430] rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#EF4444] shadow-[0_0_6px_#EF4444]" />
+            <span className="font-sans text-sm text-card-foreground">
+              {failedAgents.length} agent{failedAgents.length > 1 ? "s" : ""} failed
+            </span>
+            <span className="font-code text-[10px] text-muted-foreground">
+              ({failedAgents.map((a) => a.replace("_agent", "")).join(", ")})
+            </span>
+          </div>
+          <button
+            onClick={handleReanalyze}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md",
+              "bg-primary text-primary-foreground",
+              "font-sans text-xs font-semibold uppercase tracking-wider",
+              "hover:opacity-90 transition-opacity duration-150"
+            )}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            Re-analyze
+          </button>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <nav
@@ -153,9 +196,32 @@ export function ArchitectureReport({ projectId }: ArchitectureReportProps) {
             title="Documentation"
             status={report.agentsStatus.documentation_agent}
           >
-            <p className="text-card-foreground text-sm">
-              Generated documentation bundle and coverage report.
-            </p>
+            {report.documentation?.summary ? (
+              <div className="space-y-4">
+                <p className="font-sans text-sm text-card-foreground leading-relaxed">
+                  {report.documentation.summary}
+                </p>
+                {report.documentation.sections && report.documentation.sections.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                      Generated Sections
+                    </h4>
+                    {report.documentation.sections.map((section, idx) => (
+                      <div key={idx} className="flex items-center gap-2 py-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0" />
+                        <span className="font-sans text-sm text-card-foreground">
+                          {(section as Record<string, unknown>).title as string || (section as Record<string, unknown>).name as string || `Section ${idx + 1}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Documentation bundle not yet generated.
+              </p>
+            )}
           </ReportSection>
         )}
         {activeTab === "modernization" && (
@@ -163,9 +229,43 @@ export function ArchitectureReport({ projectId }: ArchitectureReportProps) {
             title="Modernization Plan"
             status={report.agentsStatus.modernization_agent}
           >
-            <p className="text-card-foreground text-sm">
-              Refactoring recommendations and prioritized action plan.
-            </p>
+            {report.modernization?.summary ? (
+              <div className="space-y-4">
+                <p className="font-sans text-sm text-card-foreground leading-relaxed">
+                  {report.modernization.summary}
+                </p>
+                {report.modernization.phases && report.modernization.phases.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                      Phases ({report.modernization.phases.length})
+                    </h4>
+                    {report.modernization.phases.map((phase, idx) => (
+                      <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                        <span className="font-sans text-sm text-card-foreground">
+                          {phase.name || `Phase ${idx + 1}`}
+                        </span>
+                        <div className="flex gap-2">
+                          {phase.priority && (
+                            <span className="font-code text-[9px] text-primary bg-[#F59E0B15] rounded px-2 py-0.5">
+                              {phase.priority}
+                            </span>
+                          )}
+                          {phase.effort && (
+                            <span className="font-code text-[9px] text-muted-foreground bg-muted rounded px-2 py-0.5">
+                              {phase.effort}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Modernization plan not yet generated.
+              </p>
+            )}
           </ReportSection>
         )}
       </div>
@@ -242,15 +342,22 @@ function ArchitectureTab({
                   <span className="font-sans text-sm text-foreground font-medium">
                     {layer.name}
                   </span>
-                  {"modules" in layer && layer.modules && (
-                    <span className="font-code text-[10px] text-muted-foreground">
-                      {layer.modules}
-                    </span>
-                  )}
                 </div>
                 <p className="font-sans text-[12px] text-muted-foreground mt-0.5">
                   {layer.responsibility}
                 </p>
+                {"modules" in layer && layer.modules && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {String(layer.modules).split(/[,\n]/).map((mod) => mod.trim()).filter(Boolean).map((mod, mi) => (
+                      <span
+                        key={mi}
+                        className="font-code text-[10px] text-secondary bg-[#06B6D410] border border-[#06B6D430] rounded px-1.5 py-0.5 break-all"
+                      >
+                        {mod.split(".").pop()}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -426,26 +533,93 @@ function QualityContent({
 }: {
   report: NonNullable<ReturnType<typeof useReport>["report"]>;
 }) {
+  const quality = report.quality;
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between py-2 border-b border-border">
-        <span className="font-sans text-sm text-card-foreground">Total Lines of Code</span>
-        <span className="font-code text-[11px] text-foreground">
-          {report.metrics.totalLoc.toLocaleString()}
-        </span>
+    <div className="space-y-4">
+      {/* Summary */}
+      {quality?.summary && (
+        <p className="font-sans text-sm text-card-foreground leading-relaxed mb-4">
+          {quality.summary}
+        </p>
+      )}
+
+      {/* Metrics */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between py-2 border-b border-border">
+          <span className="font-sans text-sm text-card-foreground">Total Lines of Code</span>
+          <span className="font-code text-[11px] text-foreground">
+            {report.metrics.totalLoc.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-center justify-between py-2 border-b border-border">
+          <span className="font-sans text-sm text-card-foreground">Module Count</span>
+          <span className="font-code text-[11px] text-foreground">
+            {report.metrics.moduleCount}
+          </span>
+        </div>
+        <div className="flex items-center justify-between py-2 border-b border-border">
+          <span className="font-sans text-sm text-card-foreground">Max Dependency Depth</span>
+          <span className="font-code text-[11px] text-foreground">
+            {report.metrics.maxDependencyDepth}
+          </span>
+        </div>
       </div>
-      <div className="flex items-center justify-between py-2 border-b border-border">
-        <span className="font-sans text-sm text-card-foreground">Module Count</span>
-        <span className="font-code text-[11px] text-foreground">
-          {report.metrics.moduleCount}
-        </span>
-      </div>
-      <div className="flex items-center justify-between py-2">
-        <span className="font-sans text-sm text-card-foreground">Max Dependency Depth</span>
-        <span className="font-code text-[11px] text-foreground">
-          {report.metrics.maxDependencyDepth}
-        </span>
-      </div>
+
+      {/* Code Smells */}
+      {quality?.codeSmells && quality.codeSmells.length > 0 && (
+        <div className="mt-4">
+          <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-3">
+            Code Smells ({quality.codeSmells.length})
+          </h4>
+          <div className="space-y-2">
+            {quality.codeSmells.slice(0, 15).map((smell, idx) => (
+              <div key={idx} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+                <span className={cn(
+                  "font-code text-[9px] uppercase tracking-wider px-2 py-0.5 rounded shrink-0 mt-0.5",
+                  (smell.severity === "high") && "bg-[#EF444415] text-[#EF4444]",
+                  (smell.severity === "medium") && "bg-[#F59E0B15] text-primary",
+                  (!smell.severity || smell.severity === "low") && "bg-muted text-muted-foreground",
+                )}>
+                  {smell.severity || "info"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-sans text-sm text-foreground">{smell.name || smell.description}</span>
+                  {smell.file && (
+                    <p className="font-code text-[11px] text-muted-foreground truncate">{smell.file}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {quality.codeSmells.length > 15 && (
+              <p className="text-[11px] text-muted-foreground italic">
+                +{quality.codeSmells.length - 15} more code smells
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hotspots */}
+      {quality?.hotspots && quality.hotspots.length > 0 && (
+        <div className="mt-4">
+          <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-3">
+            Complexity Hotspots
+          </h4>
+          <div className="space-y-2">
+            {quality.hotspots.slice(0, 10).map((hotspot, idx) => (
+              <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <span className="font-sans text-sm text-card-foreground truncate">
+                  {(hotspot as Record<string, unknown>).name as string || (hotspot as Record<string, unknown>).file as string || `Hotspot ${idx + 1}`}
+                </span>
+                <span className="font-code text-[10px] text-[#F97316] bg-[#F9731615] rounded px-2 py-0.5">
+                  {(hotspot as Record<string, unknown>).complexity as string || (hotspot as Record<string, unknown>).score as string || "high"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -461,15 +635,14 @@ function DeadCodeTab({
 }) {
   const [filterConfidence, setFilterConfidence] = useState<string>("all");
 
-  // Dead code data comes from quality_report.dead_code (populated by backend)
-  // For now we use any available data from the report, or show placeholder
+  // Dead code data comes from quality report
   const deadCodeItems: Array<{
     name: string;
     node_type: string;
     file_path: string;
     confidence: string;
     reason: string;
-  }> = (report as any).deadCode ?? [];
+  }> = (report.quality?.deadCode ?? []) as any;
 
   const filtered =
     filterConfidence === "all"
@@ -575,26 +748,9 @@ function SecurityTab({
 }: {
   report: NonNullable<ReturnType<typeof useReport>["report"]>;
 }) {
-  // Security data from security_report.semgrep + security_report.vulnerabilities
-  const semgrep: {
-    findings?: Array<{
-      rule_id: string;
-      message: string;
-      severity: string;
-      file_path: string;
-      start_line: number;
-      category: string;
-      fix_suggestion?: string;
-    }>;
-    total_findings?: number;
-    critical_count?: number;
-    high_count?: number;
-    medium_count?: number;
-    low_count?: number;
-    scan_status?: string;
-  } = (report as any).semgrep ?? {};
-
-  const findings = semgrep.findings ?? [];
+  // Security data from report.security
+  const secData = report.security;
+  const vulnerabilities = secData?.vulnerabilities ?? [];
 
   const severityColor: Record<string, string> = {
     critical: "#EF4444",
@@ -603,72 +759,77 @@ function SecurityTab({
     low: "#6B7A99",
   };
 
+  const critCount = vulnerabilities.filter((v) => v.severity === "critical").length;
+  const highCount = vulnerabilities.filter((v) => v.severity === "high").length;
+  const medCount = vulnerabilities.filter((v) => v.severity === "medium").length;
+  const lowCount = vulnerabilities.filter((v) => v.severity === "low").length;
+
   return (
     <div className="space-y-6">
-      <ReportSection title="Security Findings" status={report.agentsStatus.security_agent}>
+      <ReportSection title="Security Analysis" status={report.agentsStatus.security_agent}>
         {/* Summary */}
+        {secData?.summary && (
+          <p className="font-sans text-sm text-card-foreground leading-relaxed mb-4">
+            {secData.summary}
+          </p>
+        )}
+
+        {/* Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           <div className="bg-muted/30 border border-border rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-foreground">{semgrep.total_findings ?? 0}</p>
+            <p className="font-heading text-lg font-bold text-foreground">{vulnerabilities.length}</p>
             <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Total</p>
           </div>
           <div className="bg-[#EF444410] border border-[#EF444430] rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-[#EF4444]">{semgrep.critical_count ?? 0}</p>
+            <p className="font-heading text-lg font-bold text-[#EF4444]">{critCount}</p>
             <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Critical</p>
           </div>
           <div className="bg-[#F9731610] border border-[#F9731630] rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-[#F97316]">{semgrep.high_count ?? 0}</p>
+            <p className="font-heading text-lg font-bold text-[#F97316]">{highCount}</p>
             <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">High</p>
           </div>
           <div className="bg-[#F59E0B10] border border-[#F59E0B30] rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-primary">{semgrep.medium_count ?? 0}</p>
+            <p className="font-heading text-lg font-bold text-primary">{medCount}</p>
             <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Medium</p>
           </div>
           <div className="bg-[#6B7A9910] border border-[#6B7A9930] rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-muted-foreground">{semgrep.low_count ?? 0}</p>
+            <p className="font-heading text-lg font-bold text-muted-foreground">{lowCount}</p>
             <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Low</p>
           </div>
         </div>
 
-        {/* Scan status */}
-        {semgrep.scan_status && semgrep.scan_status !== "success" && (
-          <div className="bg-[#F59E0B10] border border-[#F59E0B30] rounded-md p-3 mb-4">
-            <p className="font-code text-[11px] text-primary">
-              Scan status: {semgrep.scan_status}
-            </p>
-          </div>
-        )}
-
-        {/* Findings list */}
-        {findings.length > 0 ? (
+        {/* Vulnerabilities list */}
+        {vulnerabilities.length > 0 ? (
           <div className="space-y-3">
-            {findings.map((finding, idx) => (
-              <div
-                key={idx}
-                className="bg-card border border-border rounded-lg p-4 space-y-2"
-              >
+            {vulnerabilities.map((vuln, idx) => (
+              <div key={idx} className="bg-card border border-border rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <span
                     className="font-code text-[9px] uppercase tracking-wider px-2 py-0.5 rounded"
                     style={{
-                      color: severityColor[finding.severity] ?? "#6B7A99",
-                      backgroundColor: `${severityColor[finding.severity] ?? "#6B7A99"}15`,
+                      color: severityColor[vuln.severity || "low"] ?? "#6B7A99",
+                      backgroundColor: `${severityColor[vuln.severity || "low"] ?? "#6B7A99"}15`,
                     }}
                   >
-                    {finding.severity}
+                    {vuln.severity || "info"}
                   </span>
-                  <span className="font-code text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
-                    {finding.category}
-                  </span>
+                  {vuln.cwe && (
+                    <span className="font-code text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                      {vuln.cwe}
+                    </span>
+                  )}
                 </div>
-                <p className="font-sans text-sm text-card-foreground">{finding.message}</p>
-                <p className="font-code text-[11px] text-muted-foreground">
-                  {finding.file_path}:{finding.start_line}
-                </p>
-                {finding.fix_suggestion && (
+                <p className="font-sans text-sm font-medium text-foreground">{vuln.title || vuln.description}</p>
+                {vuln.title && vuln.description && (
+                  <p className="font-sans text-[12px] text-muted-foreground">{vuln.description}</p>
+                )}
+                {vuln.file && (
+                  <p className="font-code text-[11px] text-muted-foreground">{vuln.file}</p>
+                )}
+                {vuln.recommendation && (
                   <div className="bg-[#10B98110] border border-[#10B98130] rounded p-2 mt-2">
-                    <p className="font-code text-[10px] uppercase tracking-wider text-[#10B981] mb-1">Remediation</p>
-                    <p className="font-sans text-[12px] text-card-foreground">{finding.fix_suggestion}</p>
+                    <p className="font-code text-[10px] uppercase tracking-wider text-[#10B981] mb-1">Fix</p>
+                    <p className="font-sans text-[12px] text-card-foreground">{vuln.recommendation}</p>
                   </div>
                 )}
               </div>
@@ -676,8 +837,25 @@ function SecurityTab({
           </div>
         ) : (
           <p className="text-muted-foreground text-sm text-center py-8">
-            No security findings — either the scan hasn&apos;t run or no issues were detected.
+            No security vulnerabilities detected — or the security agent hasn&apos;t completed.
           </p>
+        )}
+
+        {/* Recommendations */}
+        {secData?.recommendations && secData.recommendations.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-3">
+              Recommendations
+            </h4>
+            <ul className="space-y-2">
+              {secData.recommendations.map((rec, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0" />
+                  <span className="font-sans text-sm text-card-foreground">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </ReportSection>
     </div>
@@ -693,101 +871,81 @@ function RoadmapTab({
 }: {
   report: NonNullable<ReturnType<typeof useReport>["report"]>;
 }) {
-  // Roadmap data from modernization_plan.roadmap
-  const roadmap: Array<{
-    sprint: number;
-    actions: Array<{
-      action: string;
-      justification: string;
-      estimated_hours: number;
-      category: string;
-    }>;
-  }> = (report as any).roadmap ?? [];
-
-  const categoryColor: Record<string, string> = {
-    dead_code: "#EF4444",
-    security: "#F97316",
-    dependencies: "#06B6D4",
-    decoupling: "#8B5CF6",
-    refactoring: "#F59E0B",
-    testing: "#10B981",
-  };
-
-  const totalHours = roadmap.reduce(
-    (sum, sprint) => sum + sprint.actions.reduce((s, a) => s + (a.estimated_hours || 0), 0),
-    0
-  );
+  // Roadmap data from modernization report
+  const mod = report.modernization;
+  const phases = mod?.phases ?? [];
+  const quickWins = mod?.quickWins ?? [];
 
   return (
     <div className="space-y-6">
       <ReportSection title="Modernization Roadmap" status={report.agentsStatus.modernization_agent}>
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-muted/30 border border-border rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-foreground">{roadmap.length}</p>
-            <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Sprints</p>
-          </div>
-          <div className="bg-muted/30 border border-border rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-primary">
-              {roadmap.reduce((sum, s) => sum + s.actions.length, 0)}
-            </p>
-            <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Actions</p>
-          </div>
-          <div className="bg-muted/30 border border-border rounded-md p-3 text-center">
-            <p className="font-heading text-lg font-bold text-secondary">{totalHours}h</p>
-            <p className="font-code text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Estimated</p>
-          </div>
-        </div>
+        {mod?.summary && (
+          <p className="font-sans text-sm text-card-foreground leading-relaxed mb-4">
+            {mod.summary}
+          </p>
+        )}
 
-        {/* Sprint table */}
-        {roadmap.length > 0 ? (
+        {/* Quick Wins */}
+        {quickWins.length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-[#10B981] mb-3">
+              Quick Wins
+            </h4>
+            <ul className="space-y-2">
+              {quickWins.map((win, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0" />
+                  <span className="font-sans text-sm text-card-foreground">{typeof win === "string" ? win : JSON.stringify(win)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Phases */}
+        {phases.length > 0 ? (
           <div className="space-y-4">
-            {roadmap.map((sprint) => (
-              <div key={sprint.sprint} className="bg-card border border-border rounded-lg overflow-hidden">
-                {/* Sprint header */}
-                <div className="bg-[rgba(30,45,69,0.3)] px-4 py-2 border-b border-border">
+            {phases.map((phase, idx) => (
+              <div key={idx} className="bg-card border border-border rounded-lg overflow-hidden">
+                <div className="bg-[rgba(30,45,69,0.3)] px-4 py-2 border-b border-border flex items-center justify-between">
                   <span className="font-code text-[11px] uppercase tracking-[0.08em] text-foreground font-medium">
-                    Sprint {sprint.sprint}
+                    {phase.name || `Phase ${idx + 1}`}
                   </span>
-                  <span className="font-code text-[10px] text-muted-foreground ml-3">
-                    {sprint.actions.length} actions &middot;{" "}
-                    {sprint.actions.reduce((s, a) => s + (a.estimated_hours || 0), 0)}h estimated
-                  </span>
+                  <div className="flex gap-2">
+                    {phase.priority && (
+                      <span className="font-code text-[9px] text-primary bg-[#F59E0B15] rounded px-2 py-0.5">
+                        {phase.priority}
+                      </span>
+                    )}
+                    {phase.effort && (
+                      <span className="font-code text-[9px] text-muted-foreground bg-muted rounded px-2 py-0.5">
+                        {phase.effort}
+                      </span>
+                    )}
+                  </div>
                 </div>
-
-                {/* Actions */}
-                <div className="divide-y divide-border">
-                  {sprint.actions.map((action, idx) => (
-                    <div key={idx} className="px-4 py-3 flex items-start gap-3">
-                      <span
-                        className="font-code text-[9px] uppercase tracking-wider px-2 py-0.5 rounded shrink-0 mt-0.5"
-                        style={{
-                          color: categoryColor[action.category] ?? "#6B7A99",
-                          backgroundColor: `${categoryColor[action.category] ?? "#6B7A99"}15`,
-                        }}
-                      >
-                        {action.category}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-sans text-sm text-card-foreground">{action.action}</p>
-                        {action.justification && (
-                          <p className="font-sans text-[12px] text-muted-foreground mt-0.5">
-                            {action.justification}
-                          </p>
-                        )}
-                      </div>
-                      <span className="font-code text-[10px] text-muted-foreground shrink-0">
-                        {action.estimated_hours}h
-                      </span>
-                    </div>
-                  ))}
+                <div className="px-4 py-3">
+                  {phase.description && (
+                    <p className="font-sans text-sm text-card-foreground mb-2">{phase.description}</p>
+                  )}
+                  {phase.tasks && phase.tasks.length > 0 && (
+                    <ul className="space-y-1">
+                      {phase.tasks.map((task, ti) => (
+                        <li key={ti} className="flex items-start gap-2">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground flex-shrink-0" />
+                          <span className="font-sans text-[12px] text-muted-foreground">{task}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-muted-foreground text-sm text-center py-8">
-            No roadmap available — the modernization agent hasn&apos;t generated sprint plans yet.
+            No modernization roadmap available — the modernization agent hasn&apos;t completed.
           </p>
         )}
       </ReportSection>
@@ -807,12 +965,8 @@ function C4DiagramsTab({
 }) {
   const [activeLevel, setActiveLevel] = useState<"context" | "container" | "component">("context");
 
-  // C4 data from documentation_bundle.c4_diagrams
-  const c4: {
-    context?: string;
-    container?: string;
-    component?: string;
-  } = (report as any).c4Diagrams ?? {};
+  // C4 data from documentation report
+  const c4: Record<string, unknown> = (report.documentation?.c4Diagrams ?? {}) as Record<string, unknown>;
 
   const levels = [
     { id: "context" as const, label: "Context", description: "System + external actors" },
@@ -820,7 +974,7 @@ function C4DiagramsTab({
     { id: "component" as const, label: "Component", description: "Modules within containers" },
   ];
 
-  const currentChart = c4[activeLevel] ?? "";
+  const currentChart = (c4[activeLevel] as string) ?? "";
 
   return (
     <div className="space-y-6">

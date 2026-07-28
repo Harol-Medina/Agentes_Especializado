@@ -94,6 +94,13 @@ async def _run_pipeline(job: AnalysisJob, webhook_url: str) -> None:
 
     pipeline.set_on_agent_complete(_on_agent_done)
 
+    # Set up agent start notification for real-time progress
+    def _on_agent_start(agent_name: str, context) -> None:
+        """Update current_agent when a new agent starts executing."""
+        job.current_agent = agent_name
+
+    pipeline.set_on_agent_start(_on_agent_start)
+
     # Set up cancellation check
     pipeline.set_cancel_check(lambda: job.cancel_requested)
 
