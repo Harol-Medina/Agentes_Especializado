@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useJobPolling } from "@/hooks/useJobPolling";
-import { cancelJob } from "@/lib/api";
+import { cancelJob, retryFailedAgents } from "@/lib/api";
 import { AGENT_LABELS, type AgentStage } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AgentStatus } from "@/lib/api";
@@ -69,6 +69,7 @@ interface AnalysisProgressProps {
 export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
   const { job, isLoading, error } = useJobPolling(jobId);
   const [cancelling, setCancelling] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   async function handleCancel() {
     setCancelling(true);
@@ -78,6 +79,18 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
       // Even if cancel fails, polling will pick up the real status
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function handleRetry() {
+    setRetrying(true);
+    try {
+      await retryFailedAgents(jobId);
+      // Polling will pick up the new "analyzing" status
+    } catch {
+      // If retry fails, user can try again
+    } finally {
+      setRetrying(false);
     }
   }
 
@@ -125,6 +138,12 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
   const agentStatusMap = new Map(
     job.progress.agents.map((a) => [a.name, a.status])
   );
+
+  // Check if there are failed agents (partial completion)
+  const failedAgentNames = job.progress.agents
+    .filter((a) => a.status === "failed")
+    .map((a) => a.name);
+  const hasFailedAgents = failedAgentNames.length > 0;
 
   return (
     <div className="container relative z-10 pt-12 pb-16">
@@ -341,8 +360,47 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
           </div>
         )}
 
-        {/* Failed / Cancelled: try again */}
-        {(isFailed || isCancelled) && (
+        {/* Retry failed agents (shown when completed with partial failures OR fully failed) */}
+        {(isCompleted || isFailed) && hasFailedAgents && (
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-md",
+                "bg-[#F59E0B] text-[#080D18]",
+                "font-sans text-xs font-bold uppercase tracking-wider",
+                "hover:opacity-90 transition-opacity duration-150",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+            >
+              {retrying ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Retrying...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                  Retry Failed Agents ({failedAgentNames.length})
+                </>
+              )}
+            </button>
+            <p className="font-code text-[10px] text-muted-foreground">
+              Only re-runs: {failedAgentNames.join(", ")}
+            </p>
+          </div>
+        )}
+
+        {/* Failed / Cancelled without retry option: new analysis */}
+        {(isFailed || isCancelled) && !hasFailedAgents && (
           <div className="flex justify-center">
             <Link
               href="/"

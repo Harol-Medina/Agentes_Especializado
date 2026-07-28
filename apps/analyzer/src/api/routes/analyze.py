@@ -27,7 +27,7 @@ from src.agents.quality_agent import QualityAgent
 from src.agents.repository_agent import RepositoryAgent
 from src.agents.security_agent import SecurityAgent
 from src.api.job_store import jobs
-from src.api.schemas import AnalyzeRequest, AnalyzeResponse
+from src.api.schemas import AnalyzeRequest, AnalyzeResponse, RetryRequest, RetryResponse
 from src.config import get_settings
 from src.domain.models.analysis_job import AnalysisJob, JobStatus
 from src.parsing.chunker import ASTChunker
@@ -306,4 +306,208 @@ async def start_analysis(
         job_id=job.id,
         status="pending",
         estimated_duration="5-15 minutes",
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /analyze/retry — Retry only failed agents
+# ---------------------------------------------------------------------------
+
+# Map of agent names to their constructors
+AGENT_REGISTRY: dict[str, type] = {
+    "repository_agent": RepositoryAgent,
+    "architecture_agent": ArchitectureAgent,
+    "quality_agent": QualityAgent,
+    "security_agent": SecurityAgent,
+    "documentation_agent": DocumentationAgent,
+    "modernization_agent": ModernizationAgent,
+    "kiro_agent": KiroAgent,
+}
+
+
+async def _run_retry_pipeline(
+    job: AnalysisJob, failed_agents: list[str], webhook_url: str
+) -> None:
+    """Re-execute only the specified failed agents using existing job context.
+
+    Rebuilds the PipelineContext from the job's stored results, re-clones the
+    repo if needed (for agents like security that need repo_path), and runs
+    only the requested agents.
+    """
+    from src.adapters.git_adapter import GitAdapter
+
+    settings = get_settings()
+
+    job.status = JobStatus.ANALYZING
+    job.error_message = None
+
+    # Rebuild PipelineContext from existing job data
+    from src.agents.base import PipelineContext
+
+    context = PipelineContext(job_id=job.id, repo_url=job.repo_url)
+    context.project_model = job.project
+    context.architecture_report = job.architecture_report
+    context.quality_report = job.quality_report
+    context.security_report = job.security_report
+    context.documentation_bundle = job.documentation_bundle
+    context.modernization_plan = job.modernization_plan
+    context.kiro_spec = job.kiro_spec
+
+    # Re-clone repo if any agent needs repo_path (security_agent needs it)
+    needs_repo = any(a in failed_agents for a in ["repository_agent", "security_agent"])
+    if needs_repo and job.repo_url:
+        git_adapter = GitAdapter()
+        clone_dest = Path(settings.clone_temp_dir) / str(job.id)
+        if not clone_dest.exists():
+            logger.info("Re-cloning repo for retry — job_id=%s", job.id)
+            await git_adapter.clone(job.repo_url, clone_dest)
+        context.repo_path = str(clone_dest)
+
+    # Filter to only the failed agents requested, in execution order
+    agents_to_run = []
+    for agent_name in failed_agents:
+        if agent_name in AGENT_REGISTRY:
+            agents_to_run.append(AGENT_REGISTRY[agent_name]())
+
+    agents_to_run.sort(key=lambda a: a.execution_order)
+
+    # Remove old failed results for these agents
+    job.agent_results = [
+        r for r in job.agent_results if r.agent_name not in failed_agents
+    ]
+
+    # Create webhook adapter
+    webhook_adapter = WebhookAdapter(
+        webhook_url=webhook_url,
+        webhook_secret=settings.webhook_secret,
+    )
+
+    logger.info(
+        "Retry pipeline started — job_id=%s, agents=%s",
+        job.id,
+        [a.name for a in agents_to_run],
+    )
+
+    for agent in agents_to_run:
+        job.current_agent = agent.name
+
+        if not agent.can_execute(context):
+            logger.info("Retry: agent skipped (can_execute=False) — agent=%s", agent.name)
+            continue
+
+        logger.info("Retry: agent starting — agent=%s, job_id=%s", agent.name, job.id)
+
+        try:
+            output = await agent.execute(context)
+
+            # Apply output to context
+            for key, value in output.context_updates.items():
+                if hasattr(context, key):
+                    setattr(context, key, value)
+
+            from src.domain.models.agent_result import AgentResult, AgentStatus
+
+            result = AgentResult(
+                agent_name=agent.name,
+                status=AgentStatus.COMPLETED,
+                execution_order=agent.execution_order,
+                output=output.data,
+            )
+            context.agent_results.append(result)
+            job.agent_results.append(result)
+
+            logger.info("Retry: agent completed — agent=%s", agent.name)
+
+        except Exception as exc:  # noqa: BLE001
+            from src.domain.models.agent_result import AgentResult, AgentStatus
+
+            result = AgentResult(
+                agent_name=agent.name,
+                status=AgentStatus.FAILED,
+                execution_order=agent.execution_order,
+                error_message=str(exc),
+            )
+            context.agent_results.append(result)
+            job.agent_results.append(result)
+
+            logger.warning(
+                "Retry: agent failed — agent=%s, error=%s", agent.name, str(exc)
+            )
+
+    # Update job with new results
+    job.status = JobStatus.COMPLETED
+    job.current_agent = None
+    if context.architecture_report:
+        job.architecture_report = context.architecture_report
+    if context.quality_report:
+        job.quality_report = context.quality_report
+    if context.security_report:
+        job.security_report = context.security_report
+    if context.documentation_bundle:
+        job.documentation_bundle = context.documentation_bundle
+    if context.modernization_plan:
+        job.modernization_plan = context.modernization_plan
+    if context.kiro_spec:
+        job.kiro_spec = context.kiro_spec
+
+    logger.info("Retry pipeline completed — job_id=%s", job.id)
+
+    # Send webhook
+    try:
+        await webhook_adapter.notify_completion({
+            "jobId": str(job.id),
+            "status": "completed",
+            "projectId": str(job.project.id) if job.project else None,
+            "agentsStatus": {r.agent_name: r.status.value for r in job.agent_results},
+        })
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Retry webhook failed — job_id=%s, error=%s", job.id, str(exc))
+
+
+@router.post(
+    "/retry",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=RetryResponse,
+    summary="Retry failed agents for an existing analysis",
+)
+async def retry_failed_agents(
+    request: RetryRequest,
+    background_tasks: BackgroundTasks,
+) -> RetryResponse:
+    """Re-run only the failed agents from a previous analysis.
+
+    Uses the existing job context (project model, reports) and only
+    executes the specified agents. Returns 202 immediately.
+    """
+    job = jobs.get(request.job_id)
+    if job is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"Job {request.job_id} not found in memory. Only recent jobs can be retried.",
+        )
+
+    # Validate requested agents exist
+    valid_agents = [a for a in request.failed_agents if a in AGENT_REGISTRY]
+    if not valid_agents:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"No valid agents to retry. Available: {list(AGENT_REGISTRY.keys())}",
+        )
+
+    background_tasks.add_task(_run_retry_pipeline, job, valid_agents, request.webhook_url)
+
+    logger.info(
+        "Retry accepted — job_id=%s, agents=%s",
+        request.job_id,
+        valid_agents,
+    )
+
+    return RetryResponse(
+        job_id=request.job_id,
+        status="retrying",
+        retrying_agents=valid_agents,
     )

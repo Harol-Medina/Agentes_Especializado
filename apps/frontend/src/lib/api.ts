@@ -96,3 +96,18 @@ export async function cancelJob(
   });
   return handleResponse<CancelJobResponse>(res);
 }
+
+export interface RetryResponse {
+  jobId: string;
+  status: string;
+  retryingAgents: string[];
+}
+
+export async function retryFailedAgents(
+  jobId: string
+): Promise<RetryResponse> {
+  const res = await fetch(`${API_BASE_URL}/v1/jobs/${jobId}/retry`, {
+    method: "POST",
+  });
+  return handleResponse<RetryResponse>(res);
+}

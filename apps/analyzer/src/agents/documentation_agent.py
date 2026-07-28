@@ -18,7 +18,7 @@ from src.domain.models.project_model import NodeType
 
 logger = logging.getLogger(__name__)
 
-MAX_INPUT_CHARS = 3000
+MAX_INPUT_CHARS = 2000
 
 
 def _truncate(text: str, max_chars: int = MAX_INPUT_CHARS) -> str:
@@ -63,7 +63,7 @@ class DocumentationAgent(BaseAgent):
             raw_response = await self._bedrock.invoke_claude(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
-                max_tokens=4096,
+                max_tokens=2048,
             )
 
             bundle = self._parse_response(raw_response)

@@ -3,6 +3,17 @@
 import { useState, useCallback, useRef } from "react";
 import { API_BASE_URL } from "@/lib/constants";
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
@@ -45,14 +56,14 @@ export function useChat(projectId: string): UseChatReturn {
 
       // Add user message
       const userMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "user",
         content: question.trim(),
       };
 
       // Create placeholder assistant message
       const assistantMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         content: "",
         isStreaming: true,

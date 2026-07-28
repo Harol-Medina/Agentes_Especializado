@@ -153,6 +153,37 @@ class GraphResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# POST /analyze/retry
+# ---------------------------------------------------------------------------
+
+
+class RetryRequest(BaseModel):
+    """Payload sent by the Backend to retry failed agents for an existing job."""
+
+    job_id: UUID = Field(
+        ...,
+        description="Job UUID of the original completed/partial analysis.",
+    )
+    failed_agents: list[str] = Field(
+        ...,
+        description="List of agent names to re-execute (e.g. ['security_agent', 'documentation_agent']).",
+    )
+    webhook_url: str = Field(
+        ...,
+        description="Backend endpoint that receives the completion webhook.",
+        examples=["http://backend:8080/api/webhooks/analysis-complete"],
+    )
+
+
+class RetryResponse(BaseModel):
+    """Immediate 202 response confirming the retry was accepted."""
+
+    job_id: UUID
+    status: str = Field(default="retrying", description="Job status during retry.")
+    retrying_agents: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
 

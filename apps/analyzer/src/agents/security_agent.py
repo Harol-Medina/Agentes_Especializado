@@ -53,10 +53,10 @@ class SecurityAgent(BaseAgent):
         try:
             # Run Semgrep static analysis (if available)
             semgrep_report: dict = {}
-            if project.repo_path:
+            if context.repo_path:
                 scanner = SemgrepScanner()
                 scan_result = await scanner.scan(
-                    repo_path=str(project.repo_path),
+                    repo_path=str(context.repo_path),
                     language=project.language or "java",
                 )
                 semgrep_report = scan_result.to_dict()

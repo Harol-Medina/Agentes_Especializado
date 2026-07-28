@@ -221,6 +221,35 @@ public class AnalyzerClient {
                 .onErrorMap(this::wrapError);
     }
 
+    /**
+     * Triggers a retry of failed agents for an existing analysis job.
+     * Sends POST /analyze/retry and expects a 202 Accepted response.
+     *
+     * @param jobId        the job UUID of the original analysis
+     * @param failedAgents list of agent names to retry
+     * @param webhookUrl   the webhook URL for completion notification
+     * @return Mono<Void> that completes when the 202 is received
+     * @throws AnalyzerClientException on communication or HTTP errors
+     */
+    public Mono<Void> triggerRetry(UUID jobId, java.util.List<String> failedAgents, String webhookUrl) {
+        Map<String, Object> body = Map.of(
+                "job_id", jobId.toString(),
+                "failed_agents", failedAgents,
+                "webhook_url", webhookUrl
+        );
+
+        return webClient.post()
+                .uri("/analyze/retry")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response -> mapError(response.statusCode()))
+                .toBodilessEntity()
+                .timeout(restTimeout)
+                .onErrorMap(this::wrapError)
+                .then();
+    }
+
     private Mono<Throwable> mapError(HttpStatusCode statusCode) {
         int code = statusCode.value();
         if (code == 400) {

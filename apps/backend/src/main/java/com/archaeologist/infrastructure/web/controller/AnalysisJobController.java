@@ -285,6 +285,95 @@ public class AnalysisJobController {
     }
 
     /**
+     * POST /api/v1/jobs/{jobId}/retry — retry only the failed agents.
+     */
+    @PostMapping("/{jobId}/retry")
+    public Mono<ResponseEntity<?>> retryFailedAgents(@PathVariable UUID jobId) {
+        AnalysisJob job = jobStore.get(jobId);
+
+        if (job == null) {
+            return Mono.just(ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("JOB_NOT_FOUND", "Analysis job not found")));
+        }
+
+        // Only retry jobs that completed (with partial failures) or failed
+        if (job.status() != JobStatus.COMPLETED && job.status() != JobStatus.FAILED) {
+            return Mono.just(ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("JOB_NOT_RETRYABLE",
+                    "Only completed or failed jobs can be retried. Current status: " + job.status().name().toLowerCase())));
+        }
+
+        // Get failed agents from the analyzer's job status
+        return analyzerClient.getJobStatus(jobId)
+            .<ResponseEntity<?>>flatMap(analyzerStatus -> {
+                // Extract failed agent names from the analyzer response
+                List<String> failedAgents = new java.util.ArrayList<>();
+                if (analyzerStatus.progress() != null && analyzerStatus.progress().failedAgents() != null) {
+                    failedAgents.addAll(analyzerStatus.progress().failedAgents());
+                }
+
+                if (failedAgents.isEmpty()) {
+                    return Mono.just(ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body((Object) new ErrorResponse("NO_FAILED_AGENTS",
+                            "No failed agents found to retry.")));
+                }
+
+                // Update job status to analyzing
+                job.updateStatus(JobStatus.ANALYZING);
+                job.setCurrentAgent(failedAgents.get(0));
+
+                // Dispatch retry to the Analyzer service
+                String webhookUrl = webhookBaseUrl + "/api/webhooks/analysis-complete";
+                return analyzerClient.triggerRetry(jobId, failedAgents, webhookUrl)
+                    .<ResponseEntity<?>>thenReturn(ResponseEntity
+                        .status(HttpStatus.ACCEPTED)
+                        .body((Object) java.util.Map.of(
+                            "jobId", jobId.toString(),
+                            "status", "retrying",
+                            "retryingAgents", failedAgents
+                        )))
+                    .onErrorResume(err -> {
+                        log.error("Failed to dispatch retry to Analyzer — job_id={}, error={}", jobId, err.getMessage());
+                        job.updateStatus(JobStatus.FAILED);
+                        job.setErrorMessage("Failed to connect to analyzer for retry: " + err.getMessage());
+                        return Mono.just(ResponseEntity
+                            .status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .body((Object) new ErrorResponse("ANALYZER_UNAVAILABLE",
+                                "Failed to connect to analyzer service for retry.")));
+                    });
+            })
+            .onErrorResume(ex -> {
+                // If we can't get job status from analyzer, try with a default list
+                log.warn("Could not get job status from analyzer, retrying all non-critical agents — job_id={}", jobId);
+                List<String> defaultRetryAgents = List.of("security_agent", "documentation_agent");
+
+                job.updateStatus(JobStatus.ANALYZING);
+                job.setCurrentAgent(defaultRetryAgents.get(0));
+
+                String webhookUrl = webhookBaseUrl + "/api/webhooks/analysis-complete";
+                return analyzerClient.triggerRetry(jobId, defaultRetryAgents, webhookUrl)
+                    .<ResponseEntity<?>>thenReturn(ResponseEntity
+                        .status(HttpStatus.ACCEPTED)
+                        .body((Object) java.util.Map.of(
+                            "jobId", jobId.toString(),
+                            "status", "retrying",
+                            "retryingAgents", defaultRetryAgents
+                        )))
+                    .onErrorResume(err2 -> {
+                        job.updateStatus(JobStatus.FAILED);
+                        job.setErrorMessage("Retry failed: " + err2.getMessage());
+                        return Mono.just(ResponseEntity
+                            .status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .body(new ErrorResponse("ANALYZER_UNAVAILABLE",
+                                "Failed to connect to analyzer service for retry.")));
+                    });
+            });
+    }
+
+    /**
      * Builds the agent progress list based on current job state.
      * Uses the fixed pipeline order of 7 agents.
      */
