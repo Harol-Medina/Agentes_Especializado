@@ -132,6 +132,7 @@ async def _sse_stream(
     "",
     summary="RAG query with SSE streaming (security-filtered)",
     response_class=StreamingResponse,
+    response_model=None,
     status_code=status.HTTP_200_OK,
 )
 async def rag_query(request: QueryRequest, http_request: Request) -> StreamingResponse | JSONResponse:

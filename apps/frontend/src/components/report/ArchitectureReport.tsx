@@ -182,98 +182,211 @@ function ArchitectureTab({
 }: {
   report: NonNullable<ReturnType<typeof useReport>["report"]>;
 }) {
+  const arch = report.architecture;
+
   return (
     <div className="space-y-6">
-      {/* Modules */}
-      <ReportSection
-        title="Modules"
-        status={report.agentsStatus.architecture_agent}
-      >
-        {report.modules.length > 0 ? (
+      {/* Summary */}
+      {arch?.summary && (
+        <ReportSection title="Architecture Summary" status={report.agentsStatus.architecture_agent}>
+          <p className="font-sans text-sm text-card-foreground leading-relaxed">
+            {arch.summary}
+          </p>
+        </ReportSection>
+      )}
+
+      {/* Patterns */}
+      {arch?.patterns && arch.patterns.length > 0 && (
+        <ReportSection title="Detected Patterns" status={report.agentsStatus.architecture_agent}>
           <div className="space-y-2">
-            {report.modules.map((mod) => (
-              <div
-                key={mod.name}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
-              >
-                <div>
-                  <span className="font-sans text-sm text-foreground font-medium">
-                    {mod.name}
-                  </span>
-                  <p className="font-sans text-[12px] text-muted-foreground">
-                    {mod.responsibility}
-                  </p>
+            {arch.patterns.map((pattern, idx) => {
+              const p = typeof pattern === "string" ? { name: pattern } : pattern;
+              return (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 py-2 border-b border-border last:border-0"
+                >
+                  <span className="mt-0.5 w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_var(--primary)] flex-shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-sans text-sm text-foreground font-medium">
+                      {p.name}
+                    </span>
+                    {p.description && (
+                      <p className="font-sans text-[12px] text-muted-foreground mt-0.5">
+                        {p.description}
+                      </p>
+                    )}
+                  </div>
+                  {p.confidence && (
+                    <span className="font-code text-[10px] text-[#10B981] bg-[#10B98115] border border-[#10B98140] rounded px-2 py-0.5">
+                      {p.confidence}
+                    </span>
+                  )}
                 </div>
-                <span className="font-code text-[10px] text-muted-foreground uppercase tracking-wide">
-                  {mod.loc.toLocaleString()} loc
-                </span>
+              );
+            })}
+          </div>
+        </ReportSection>
+      )}
+
+      {/* Layers / Modules */}
+      <ReportSection title="Architectural Layers" status={report.agentsStatus.architecture_agent}>
+        {(arch?.layers && arch.layers.length > 0) || report.modules.length > 0 ? (
+          <div className="space-y-2">
+            {(arch?.layers && arch.layers.length > 0 ? arch.layers : report.modules).map((layer, idx) => (
+              <div
+                key={idx}
+                className="py-3 border-b border-border last:border-0"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-sans text-sm text-foreground font-medium">
+                    {layer.name}
+                  </span>
+                  {"modules" in layer && layer.modules && (
+                    <span className="font-code text-[10px] text-muted-foreground">
+                      {layer.modules}
+                    </span>
+                  )}
+                </div>
+                <p className="font-sans text-[12px] text-muted-foreground mt-0.5">
+                  {layer.responsibility}
+                </p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">No modules detected.</p>
+          <p className="text-muted-foreground text-sm">No layers detected.</p>
         )}
       </ReportSection>
 
-      {/* Dependencies */}
-      <ReportSection title="Dependencies" status={report.agentsStatus.architecture_agent}>
-        <div className="space-y-4">
-          {/* External */}
-          {report.dependencies.external.length > 0 && (
-            <div>
-              <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2">
-                External Dependencies
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {report.dependencies.external.map((dep) => (
-                  <span
-                    key={dep.name}
-                    className="font-code text-[11px] text-secondary bg-[#06B6D415] border border-[#06B6D440] rounded px-2 py-0.5"
-                  >
-                    {dep.name}
-                    {dep.version && (
-                      <span className="text-muted-foreground ml-1">
-                        @{dep.version}
-                      </span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Internal */}
-          {report.dependencies.internal.length > 0 && (
-            <div>
-              <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2">
-                Internal Relationships
-              </h4>
-              <div className="space-y-1">
-                {report.dependencies.internal.slice(0, 10).map((dep, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 text-sm text-card-foreground"
-                  >
-                    <span className="font-code text-[11px]">{dep.from}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <span className="font-code text-[11px]">{dep.to}</span>
-                    {dep.type && (
-                      <span className="font-code text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
-                        {dep.type}
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {report.dependencies.internal.length > 10 && (
-                  <p className="text-[11px] text-muted-foreground italic">
-                    +{report.dependencies.internal.length - 10} more relationships
+      {/* Violations */}
+      {arch?.violations && arch.violations.length > 0 && (
+        <ReportSection title="Architecture Violations" status={report.agentsStatus.architecture_agent}>
+          <div className="space-y-2">
+            {arch.violations.map((v, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-3 py-2 border-b border-border last:border-0"
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 w-2 h-2 rounded-full flex-shrink-0",
+                    v.severity === "high"
+                      ? "bg-[#EF4444] shadow-[0_0_6px_#EF4444]"
+                      : v.severity === "medium"
+                      ? "bg-[#F97316] shadow-[0_0_6px_#F97316]"
+                      : "bg-[#F59E0B] shadow-[0_0_6px_#F59E0B]"
+                  )}
+                />
+                <div className="flex-1">
+                  <p className="font-sans text-sm text-card-foreground">
+                    {v.description}
                   </p>
+                  {v.affected_modules && v.affected_modules.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {v.affected_modules.map((mod) => (
+                        <span
+                          key={mod}
+                          className="font-code text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5"
+                        >
+                          {mod}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {v.severity && (
+                  <span
+                    className={cn(
+                      "font-code text-[10px] uppercase tracking-wide rounded px-2 py-0.5",
+                      v.severity === "high"
+                        ? "text-[#EF4444] bg-[#EF444415] border border-[#EF444440]"
+                        : v.severity === "medium"
+                        ? "text-[#F97316] bg-[#F9731615] border border-[#F9731640]"
+                        : "text-[#F59E0B] bg-[#F59E0B15] border border-[#F59E0B40]"
+                    )}
+                  >
+                    {v.severity}
+                  </span>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-      </ReportSection>
+            ))}
+          </div>
+        </ReportSection>
+      )}
+
+      {/* Recommendations */}
+      {arch?.recommendations && arch.recommendations.length > 0 && (
+        <ReportSection title="Recommendations" status={report.agentsStatus.architecture_agent}>
+          <ul className="space-y-2">
+            {arch.recommendations.map((rec, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
+                <span className="font-sans text-sm text-card-foreground">{rec}</span>
+              </li>
+            ))}
+          </ul>
+        </ReportSection>
+      )}
+
+      {/* Dependencies (kept as before) */}
+      {(report.dependencies.internal.length > 0 || report.dependencies.external.length > 0) && (
+        <ReportSection title="Dependencies" status={report.agentsStatus.architecture_agent}>
+          <div className="space-y-4">
+            {report.dependencies.external.length > 0 && (
+              <div>
+                <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2">
+                  External Dependencies
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {report.dependencies.external.map((dep) => (
+                    <span
+                      key={dep.name}
+                      className="font-code text-[11px] text-secondary bg-[#06B6D415] border border-[#06B6D440] rounded px-2 py-0.5"
+                    >
+                      {dep.name}
+                      {dep.version && (
+                        <span className="text-muted-foreground ml-1">
+                          @{dep.version}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {report.dependencies.internal.length > 0 && (
+              <div>
+                <h4 className="font-code text-[10px] uppercase tracking-[0.1em] text-muted-foreground mb-2">
+                  Internal Relationships
+                </h4>
+                <div className="space-y-1">
+                  {report.dependencies.internal.slice(0, 10).map((dep, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 text-sm text-card-foreground"
+                    >
+                      <span className="font-code text-[11px]">{dep.from}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="font-code text-[11px]">{dep.to}</span>
+                      {dep.type && (
+                        <span className="font-code text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                          {dep.type}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {report.dependencies.internal.length > 10 && (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      +{report.dependencies.internal.length - 10} more relationships
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </ReportSection>
+      )}
 
       {/* Components */}
       {report.components.length > 0 && (

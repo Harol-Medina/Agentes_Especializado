@@ -44,6 +44,8 @@ class Settings(BaseSettings):
         default="amazon.titan-embed-text-v2:0",
         validation_alias="bedrock_embedding_model_id",
     )
+    bedrock_timeout_seconds: int = 60  # Max time for a single LLM call
+    bedrock_connect_timeout_seconds: int = 10  # Connection establishment timeout
 
     # ----------------------------------------------------------------- limits
     max_repo_size_bytes: int = 524_288_000  # 500 MB

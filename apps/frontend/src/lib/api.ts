@@ -9,7 +9,8 @@ export type JobStatus =
   | "cloning"
   | "analyzing"
   | "completed"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 export type AgentStatus =
   | "pending"
@@ -79,4 +80,19 @@ export async function getJobStatus(
 ): Promise<AnalysisJobResponse> {
   const res = await fetch(`${API_BASE_URL}/v1/jobs/${jobId}`);
   return handleResponse<AnalysisJobResponse>(res);
+}
+
+export interface CancelJobResponse {
+  jobId: string;
+  cancelled: boolean;
+  message: string;
+}
+
+export async function cancelJob(
+  jobId: string
+): Promise<CancelJobResponse> {
+  const res = await fetch(`${API_BASE_URL}/v1/jobs/${jobId}`, {
+    method: "DELETE",
+  });
+  return handleResponse<CancelJobResponse>(res);
 }

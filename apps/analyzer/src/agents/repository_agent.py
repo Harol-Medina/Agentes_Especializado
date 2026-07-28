@@ -84,7 +84,7 @@ class RepositoryAgent(BaseAgent):
 
         # --- Step 1: Clone ---
         git_adapter = GitAdapter()
-        repo_path = git_adapter.clone(repo_url, job_id)
+        repo_path = await git_adapter.clone(repo_url, job_id)
 
         logger.info("Repository cloned at %s", repo_path)
 
@@ -99,7 +99,7 @@ class RepositoryAgent(BaseAgent):
 
             # --- Step 3: Parse source files ---
             parser = TreeSitterParser()
-            source_files = git_adapter.list_source_files(repo_path)
+            source_files = await git_adapter.list_source_files(repo_path)
             parsed_files = self._parse_source_files(parser, source_files, repo_path)
 
             logger.info(

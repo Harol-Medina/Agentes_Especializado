@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useJobPolling } from "@/hooks/useJobPolling";
+import { cancelJob } from "@/lib/api";
 import { AGENT_LABELS, type AgentStage } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AgentStatus } from "@/lib/api";
@@ -66,6 +68,18 @@ interface AnalysisProgressProps {
 
 export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
   const { job, isLoading, error } = useJobPolling(jobId);
+  const [cancelling, setCancelling] = useState(false);
+
+  async function handleCancel() {
+    setCancelling(true);
+    try {
+      await cancelJob(jobId);
+    } catch {
+      // Even if cancel fails, polling will pick up the real status
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   // Loading state
   if (isLoading && !job) {
@@ -104,6 +118,8 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
 
   const isCompleted = job.status === "completed";
   const isFailed = job.status === "failed";
+  const isCancelled = job.status === "cancelled";
+  const isRunning = !isCompleted && !isFailed && !isCancelled;
 
   // Build agent status map from response
   const agentStatusMap = new Map(
@@ -135,6 +151,16 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
                 An error occurred during the analysis pipeline.
               </p>
             </>
+          ) : isCancelled ? (
+            <>
+              <div className="w-3 h-3 rounded-full bg-[#F97316] shadow-[0_0_8px_#F97316] mx-auto" />
+              <h1 className="font-heading font-bold text-foreground text-2xl pt-2">
+                Analysis Cancelled
+              </h1>
+              <p className="font-sans text-sm text-[#F97316]">
+                The analysis was cancelled.
+              </p>
+            </>
           ) : (
             <>
               <div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_#F59E0B] animate-status-pulse mx-auto" />
@@ -147,6 +173,48 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
             </>
           )}
         </div>
+
+        {/* Cancel button (shown only while running) */}
+        {isRunning && (
+          <div className="flex justify-center">
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-md",
+                "border border-[#EF4444]/40 bg-[#EF4444]/10 text-[#EF4444]",
+                "font-sans text-xs font-semibold uppercase tracking-wider",
+                "hover:bg-[#EF4444]/20 hover:border-[#EF4444]/60 transition-colors duration-150",
+                "focus:outline-none focus:ring-2 focus:ring-[#EF4444]/50 focus:ring-offset-2 focus:ring-offset-background",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+            >
+              {cancelling ? (
+                <>
+                  <svg
+                    className="animate-spin h-3.5 w-3.5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Cancel Analysis
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="space-y-2">
@@ -270,6 +338,28 @@ export function AnalysisProgress({ jobId }: AnalysisProgressProps) {
         {isFailed && error && (
           <div className="bg-[#EF444410] border border-[#EF444440] rounded-xl p-4">
             <p className="font-code text-[11px] text-[#EF4444]">{error}</p>
+          </div>
+        )}
+
+        {/* Failed / Cancelled: try again */}
+        {(isFailed || isCancelled) && (
+          <div className="flex justify-center">
+            <Link
+              href="/"
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-md",
+                "bg-primary text-primary-foreground",
+                "font-sans text-xs font-bold uppercase tracking-wider",
+                "hover:opacity-90 transition-opacity duration-150",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+              )}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              New Analysis
+            </Link>
           </div>
         )}
       </div>

@@ -31,7 +31,7 @@ export function useJobPolling(jobId: string) {
         setIsLoading(false);
 
         // Stop polling on terminal states
-        if (data.status === "completed" || data.status === "failed") {
+        if (data.status === "completed" || data.status === "failed" || data.status === "cancelled") {
           stopPolling();
         }
       } catch (err: unknown) {

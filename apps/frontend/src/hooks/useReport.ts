@@ -29,11 +29,90 @@ export interface ReportDependency {
 
 export interface ReportMetrics {
   totalLoc: number;
+  totalFiles?: number;
   moduleCount: number;
   maxDependencyDepth: number;
 }
 
-export type AgentReportStatus = "completed" | "failed" | "skipped";
+export interface ArchPattern {
+  name: string;
+  description?: string;
+  confidence?: string;
+}
+
+export interface ArchLayer {
+  name: string;
+  responsibility: string;
+  modules?: string;
+}
+
+export interface ArchViolation {
+  description: string;
+  severity?: string;
+  affected_modules?: string[];
+}
+
+export interface QualityCodeSmell {
+  name?: string;
+  description?: string;
+  severity?: string;
+  file?: string;
+  location?: string;
+}
+
+export interface SecurityVulnerability {
+  title?: string;
+  description?: string;
+  severity?: string;
+  file?: string;
+  cwe?: string;
+  recommendation?: string;
+}
+
+export interface ModernizationPhase {
+  name?: string;
+  description?: string;
+  priority?: string;
+  effort?: string;
+  tasks?: string[];
+}
+
+export interface ArchitectureSection {
+  summary: string;
+  patterns: (ArchPattern | string)[];
+  layers: ArchLayer[];
+  violations: ArchViolation[];
+  recommendations: string[];
+}
+
+export interface QualitySection {
+  summary: string;
+  metrics: Record<string, unknown>;
+  codeSmells: QualityCodeSmell[];
+  hotspots: Record<string, unknown>[];
+  deadCode: Record<string, unknown>[];
+}
+
+export interface SecuritySection {
+  summary: string;
+  vulnerabilities: SecurityVulnerability[];
+  recommendations: string[];
+}
+
+export interface DocumentationSection {
+  summary: string;
+  sections: Record<string, unknown>[];
+  c4Diagrams: Record<string, unknown>;
+}
+
+export interface ModernizationSection {
+  summary: string;
+  phases: ModernizationPhase[];
+  quickWins: string[];
+  roadmap: Record<string, unknown>[];
+}
+
+export type AgentReportStatus = "completed" | "failed" | "skipped" | "pending";
 
 export interface ArchitectureReportData {
   projectName: string;
@@ -48,6 +127,12 @@ export interface ArchitectureReportData {
   metrics: ReportMetrics;
   agentsStatus: Record<string, AgentReportStatus>;
   incompleteSections: string[];
+  architecture: ArchitectureSection;
+  quality: QualitySection;
+  security: SecuritySection;
+  documentation: DocumentationSection;
+  modernization: ModernizationSection;
+  rawReports?: Record<string, unknown>;
 }
 
 // ─────────────────────────────────────────────

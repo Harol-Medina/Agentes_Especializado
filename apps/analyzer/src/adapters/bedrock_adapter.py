@@ -2,6 +2,7 @@
 
 Implements requirement 6.1: LLM access for analysis agents via Amazon Bedrock.
 Uses boto3 bedrock-runtime client with asyncio.to_thread for async compatibility.
+Includes connect/read timeouts and asyncio.wait_for as safety net to prevent hangs.
 """
 
 from __future__ import annotations
@@ -12,7 +13,8 @@ import logging
 from typing import Optional
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.config import Config as BotoConfig
+from botocore.exceptions import ClientError, ConnectTimeoutError, ReadTimeoutError
 
 from src.config import get_settings
 
@@ -39,15 +41,24 @@ class BedrockAdapter:
     - Synchronous boto3 calls wrapped with asyncio.to_thread for async usage.
     - Retry with exponential backoff (1s, 2s, 4s) on throttling/transient errors.
     - Configurable model IDs via application settings.
+    - Connect/read timeouts to fail fast on bad credentials or network issues.
+    - asyncio.wait_for as final safety net against indefinite hangs.
     """
 
     def __init__(self) -> None:
         settings = get_settings()
+        self._timeout_seconds = settings.bedrock_timeout_seconds
+        boto_config = BotoConfig(
+            connect_timeout=settings.bedrock_connect_timeout_seconds,
+            read_timeout=settings.bedrock_timeout_seconds,
+            retries={"max_attempts": 0},  # We handle retries ourselves
+        )
         self._client = boto3.client(
             "bedrock-runtime",
             region_name=settings.aws_region,
             aws_access_key_id=settings.aws_access_key_id or None,
             aws_secret_access_key=settings.aws_secret_access_key or None,
+            config=boto_config,
         )
         self._claude_model_id = settings.bedrock_claude_model_id
         self._titan_model_id = settings.bedrock_titan_model_id
@@ -84,12 +95,15 @@ class BedrockAdapter:
 
         for attempt in range(MAX_RETRIES):
             try:
-                response = await asyncio.to_thread(
-                    self._client.invoke_model,
-                    modelId=self._claude_model_id,
-                    contentType="application/json",
-                    accept="application/json",
-                    body=body,
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self._client.invoke_model,
+                        modelId=self._claude_model_id,
+                        contentType="application/json",
+                        accept="application/json",
+                        body=body,
+                    ),
+                    timeout=self._timeout_seconds,
                 )
 
                 response_body = json.loads(response["body"].read())
@@ -101,6 +115,38 @@ class BedrockAdapter:
                     if block.get("type") == "text"
                 ]
                 return "".join(text_parts)
+
+            except asyncio.TimeoutError:
+                last_error = TimeoutError(
+                    f"Bedrock call timed out after {self._timeout_seconds}s"
+                )
+                logger.error(
+                    "Bedrock call timed out (attempt %d/%d) — timeout=%ds",
+                    attempt + 1,
+                    MAX_RETRIES,
+                    self._timeout_seconds,
+                )
+                # Timeout is not retryable — fail immediately
+                raise BedrockInvocationError(
+                    f"Bedrock call timed out after {self._timeout_seconds}s. "
+                    "Check AWS credentials and network connectivity.",
+                    original_error=last_error,
+                ) from last_error
+
+            except (ConnectTimeoutError, ReadTimeoutError) as exc:
+                last_error = exc
+                logger.error(
+                    "Bedrock connection/read timeout (attempt %d/%d): %s",
+                    attempt + 1,
+                    MAX_RETRIES,
+                    str(exc),
+                )
+                # Connection timeouts usually mean bad credentials or no network
+                raise BedrockInvocationError(
+                    f"Bedrock connection failed: {exc}. "
+                    "Check AWS credentials and network connectivity.",
+                    original_error=exc,
+                ) from exc
 
             except ClientError as exc:
                 error_code = exc.response.get("Error", {}).get("Code", "")

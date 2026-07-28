@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export interface ReportSectionProps {
   title: string;
-  status?: "completed" | "failed" | "skipped";
+  status?: "completed" | "failed" | "skipped" | "pending" | "running";
   children: React.ReactNode;
   className?: string;
 }

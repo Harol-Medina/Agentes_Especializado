@@ -133,12 +133,50 @@ async def get_report(job_id: UUID) -> dict:
         "components": components,
         "metrics": {
             "totalLoc": total_loc,
+            "totalFiles": total_files,
             "moduleCount": module_count,
             "maxDependencyDepth": max_depth,
         },
         "agentsStatus": agents_status,
         "incompleteSections": incomplete_sections,
-        # Also include raw reports for advanced views
+        # Architecture enriched data
+        "architecture": {
+            "summary": arch.get("summary", ""),
+            "patterns": arch.get("patterns", []),
+            "layers": arch.get("layers", []),
+            "violations": arch.get("violations", []),
+            "recommendations": arch.get("recommendations", []),
+        },
+        # Quality enriched data
+        "quality": {
+            "summary": quality.get("summary", ""),
+            "metrics": quality.get("metrics", {}),
+            "codeSmells": quality.get("code_smells", quality.get("codeSmells", [])),
+            "hotspots": quality.get("hotspots", []),
+            "deadCode": quality.get("dead_code", quality.get("deadCode", [])),
+        },
+        # Security enriched data
+        "security": {
+            "summary": (job.security_report or {}).get("summary", ""),
+            "vulnerabilities": (job.security_report or {}).get("vulnerabilities", []),
+            "recommendations": (job.security_report or {}).get("recommendations", []),
+        },
+        # Documentation enriched data
+        "documentation": {
+            "summary": (job.documentation_bundle or {}).get("summary", ""),
+            "sections": (job.documentation_bundle or {}).get("sections", []),
+            "c4Diagrams": (job.documentation_bundle or {}).get("c4_diagrams",
+                          (job.documentation_bundle or {}).get("c4Diagrams", {})),
+        },
+        # Modernization enriched data
+        "modernization": {
+            "summary": (job.modernization_plan or {}).get("summary", ""),
+            "phases": (job.modernization_plan or {}).get("phases", []),
+            "quickWins": (job.modernization_plan or {}).get("quick_wins",
+                         (job.modernization_plan or {}).get("quickWins", [])),
+            "roadmap": (job.modernization_plan or {}).get("roadmap", []),
+        },
+        # Raw reports for any advanced/fallback usage
         "rawReports": {
             "architecture": arch,
             "quality": quality,
